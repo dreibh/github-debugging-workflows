@@ -142,8 +142,12 @@ jobs:
           # Install Scoop for standalone applications and CLI utilities:
           & ([scriptblock]::Create((Invoke-RestMethod -Uri https://get.scoop.sh))) -RunAsAdmin
           scoop bucket add extras
-          scoop install cmake make wget figlet
+          scoop install cmake make wget figlet gettext
           # exiftool ghostscript graphicsmagick pdf2svg gimp
+
+          # Add missing shims for gettext and ngettext runtime executables:
+          scoop shim add gettext "$env:USERPROFILE\scoop\apps\gettext\current\bin\gettext.exe"
+          scoop shim add ngettext "$env:USERPROFILE\scoop\apps\gettext\current\bin\ngettext.exe"
 
           # Add Scoop shims to PATH for all subsequent workflow steps
           echo "$env:USERPROFILE\scoop\shims" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
