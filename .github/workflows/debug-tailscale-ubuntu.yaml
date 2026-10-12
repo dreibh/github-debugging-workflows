@@ -126,7 +126,6 @@ jobs:
           ./autogen.sh
           sudo make install
 
-          sudo mkdir -p /usr/local/etc/system-info.d/
           sudo cp \
              ~/src/vmimage-builder-scripts/files/11-system-info.files/01-hostname \
              ~/src/vmimage-builder-scripts/files/80-simulamet.files/02-simulamet \

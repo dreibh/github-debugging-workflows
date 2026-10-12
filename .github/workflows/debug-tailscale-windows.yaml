@@ -79,20 +79,37 @@ jobs:
              -PropertyType String `
              -Force
 
-          Write-Host "==========================================================="
+          $now = Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz"
+          Write-Host "====== $now =========================================="
           Write-Host "Tailscale IPs: $(tailscale ip)"
           Write-Host "Connect via SSH using:"
-          Write-Host "  * ssh runneradmin@$(tailscale ip -4)"
+          Write-Host " * ssh runneradmin@$(tailscale ip -4)"
           Write-Host "Password: DebugPassword123!"
+          Write-Host "SSH key fingerprints:"
+          $keyNumber = 1
+          Get-ChildItem "$env:ProgramData\ssh\ssh_host_*.pub" | Sort-Object Name | ForEach-Object {
+             $fp = ssh-keygen -lf $_.FullName
+             if ($fp -match '^(\d+)\s+(\S+)\s+.*?\((.+)\)$') {
+                $fp = "$($Matches[2]) ($($Matches[3]) $($Matches[1]))"
+             }
+             Write-Host " * #${keyNumber}: $fp"
+             $keyNumber++
+          }
           Write-Host "==========================================================="
+
+      # ###### Install Joe editor ###########################################
+      - name: Install Joe editor
+        run: |
+          /c/msys64/usr/bin/pacman -Sy --noconfirm joe
+          ln -sf /c/msys64/usr/bin/joe.exe /usr/bin/joe
 
       # ###### Clone repositories ###########################################
       - name: Clone repositories
         run: |
           mkdir -p ~/src && cd ~/src
-          # git clone https://dreibh@github.com/dreibh/bibtexconv
+          git clone https://dreibh@github.com/dreibh/bibtexconv
           # git clone https://dreibh@github.com/simula/dynmhs
-          # git clone https://dreibh@github.com/dreibh/fractgen
+          git clone https://dreibh@github.com/dreibh/fractgen
           # git clone https://dreibh@github.com/dreibh/hipercontracer
           # git clone https://dreibh@github.com/dreibh/netperfmeter
           # git clone https://dreibh@github.com/dreibh/rserpooldemo
@@ -106,27 +123,43 @@ jobs:
           # git clone https://dreibh@github.com/dreibh/tsctp
           git clone https://dreibh@github.com/simula/nornet-vmimage-builder-scripts.git vmimage-builder-scripts
 
+      # ###### Cache dependencies ###########################################
+      - name: Cache dependencies
+        uses: actions/cache@v5
+        with:
+          path: |
+            C:/vcpkg/installed
+            ~/AppData/Local/vcpkg/archives
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('.github/workflows/debug-tailscale-windows.yaml') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-
+
       # ###### Pre-install some Windows packages ############################
       # Some Windows CLI applications (Scoop) and C/C++ Libraries (vcpkg)
       - name: Install custom packages
         shell: powershell
         run: |
-          # 1. Install Scoop for standalone applications and CLI utilities:
+          # Install Scoop for standalone applications and CLI utilities:
           & ([scriptblock]::Create((Invoke-RestMethod -Uri https://get.scoop.sh))) -RunAsAdmin
           scoop bucket add extras
-          scoop install cmake make wget figlet
+          scoop install cmake make wget figlet gettext
           # exiftool ghostscript graphicsmagick pdf2svg gimp
+
+          # Add missing shims for gettext and ngettext runtime executables:
+          scoop shim add gettext "$env:USERPROFILE\scoop\apps\gettext\current\bin\gettext.exe"
+          scoop shim add ngettext "$env:USERPROFILE\scoop\apps\gettext\current\bin\ngettext.exe"
 
           # Add Scoop shims to PATH for all subsequent workflow steps
           echo "$env:USERPROFILE\scoop\shims" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
           # 2. Install C/C++ libraries using runner pre-installed vcpkg:
-          vcpkg install \
-             getopt:x64-windows \
-             gettext[tools]:x64-windows \
-             gettext-libintl:x64-windows \
-             libidn2:x64-windows \
-             libmaxminddb:x64-windows
+          $packages = @(
+             "getopt:x64-windows",
+             "gettext[core,tools]:x64-windows",
+             "libidn2:x64-windows",
+             "libmaxminddb:x64-windows"
+          )
+          vcpkg install $packages
 
           # 3. Install Python dependencies:
           python -m pip install --upgrade pip
