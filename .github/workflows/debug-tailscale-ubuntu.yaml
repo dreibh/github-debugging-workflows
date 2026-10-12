@@ -135,6 +135,11 @@ jobs:
           # Set shell to Bash:
           sudo chsh -s /bin/bash runner
 
+          # Load ~/.bashrc by default:
+          cat >>~/.bash_profile <<'EOF'
+          [ -f $HOME/.bashrc ] && source $HOME/.bashrc
+          EOF
+
           # Enable Bash shell completions:
           cat >>~/.bashrc <<'EOF'
           [[ -r "/usr/share/bash-completion/bash_completion" ]] && . "/usr/share/bash-completion/bash_completion"
