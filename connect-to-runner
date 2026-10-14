@@ -55,7 +55,7 @@ else
 fi
 
 # Construct the expected Tailscale hostname:
-TS_HOSTNAME="${REPO_NAME}-${RUNNER_OS}"
+TS_HOSTNAME="${REPO_NAME,,}-${RUNNER_OS,,}"
 
 # Check if the workflow is already running:
 echo "Checking if ${WORKFLOW_FILE} is already running ..."
@@ -72,17 +72,16 @@ echo "Waiting for ${TS_HOSTNAME} to become online via proxy (${PROXY_SSH}) ..."
 
 # Continuously ping the Tailscale hostname from the remote machine until it responds
 while true ; do
-   if ssh "${PROXY_SSH}" tailscale ping -c 1 --timeout 2s "${TS_HOSTNAME}" >/dev/null 2>&1 ; then
+   if ssh "${PROXY_SSH}" tailscale ping -c 1 --timeout 2s --until-direct=false "${TS_HOSTNAME}" ; then
       IPV4="$(ssh "${PROXY_SSH}" tailscale ip -4 "${TS_HOSTNAME}")"
-      echo -e "\n========================================================="
+      IPV6="$(ssh "${PROXY_SSH}" tailscale ip -6 "${TS_HOSTNAME}")"
       echo "✅ Runner is online!"
-      echo "Tailscale IP: ${IPV4}"
-      echo "Connect via ProxyJump from your local machine:"
-      echo "ssh -J ${PROXY_SSH} ${SSH_USER}@${TS_HOSTNAME}"
-      echo ""
-      echo "Or connect directly from the proxy machine:"
-      echo "ssh ${SSH_USER}@${TS_HOSTNAME}"
-      echo "========================================================="
+      echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
+      echo "Tailscale IPs: ${IPV4} ${IPV6}"
+      echo "Connect via SSH using:"
+      echo " * ssh -J ${PROXY_SSH} ${SSH_USER}@${IPV4}"
+      echo " * ssh -J ${PROXY_SSH} ${SSH_USER}@${IPV6}"
+      echo "==========================================================================="
       break
    fi
 
