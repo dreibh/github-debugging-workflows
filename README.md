@@ -52,27 +52,29 @@ Each debugging workflow performs the following steps:
 
 2. Generate an _ephemeral_ authentication key:
 
-  * In the Tailscale web interface, under
+  * In [Tailscale](https://console.tailscale.com/), under
     [Tailscale Admin Console](https://console.tailscale.com/admin) /
-    [settings](https://console.tailscale.com/admin/) /
+    [Settings](https://console.tailscale.com/admin/settings/) /
     [Keys](https://console.tailscale.com/admin/settings/keys),
     click on "Generate auth key":
 
-    - Reusable: ON
-    - Emphemeral: ON
+    - Reusable: **ON**
+    - Emphemeral: **ON**
 
-  * The taken needs renewal after expiration!
+    Copy the authentication token before saving.
+
+  * The taken needs renewal after its expiration date!
 
 3. Set the authentication key in GitHub:
 
-   In the GitHub user interface for **your repository**, under
+   In [GitHub](https://github.com/) for **your repository**, under
    [Settings](https://github.com/dreibh/github-debugging-workflows/settings/) /
    [Secrets and Variables](https://github.com/dreibh/github-debugging-workflows/settings/secrets) /
    [Actions ](https://github.com/dreibh/github-debugging-workflows/settings/secrets/actions)
-   (the URLs are for **this** repository), click on "New repository secret":
+   (the URLs here are for **this** repository), click on "New repository secret":
 
-    - Name: TAILSCALE_AUTHKEY
-    - Value: Your Tailscale token
+    - Name: `TAILSCALE_AUTHKEY` (the name **MUST** match)
+    - Value: *(Your Tailscale token)*
 
   The taken needs renewal after expiration!
 
@@ -96,34 +98,34 @@ Add the files, commit, and push.
 
 2. Clicking on _Actions_ shows the debugging workflows, i.e.:
 
-  * MacOS Debugging Workflow via Tailscale
-  * Ubuntu Debugging Workflow via Tailscale
-  * Windows Debugging Workflow via Tailscale
+   * MacOS Debugging Workflow via Tailscale
+   * Ubuntu Debugging Workflow via Tailscale
+   * Windows Debugging Workflow via Tailscale
 
-  Select a workflow, e.g., "MacOS Debugging Workflow via Tailscale", and start this workflow under "Run workflow".
+   Select a workflow, e.g., "MacOS Debugging Workflow via Tailscale", and start this workflow under "Run workflow".
 
 3. Open the log of the running instance and look for the Tailscale SSH details of the instance:
 
-  ```
-  ====== 2026-10-09 07:50:35 +0000 ==========================================
-  Tailscale IPs: 100.100.210.26 fd7a:115c:a1e0::892a:d21b
-  Connect via SSH using:
-  * ssh runner@100.100.210.26
-  * ssh runner@fd7a:115c:a1e0::892a:d21b
-  SSH key fingerprints:
-  * #1: SHA256:hiJFRr3JzLwHMfHci6Uu3N2sH6IxndWxS21nRrbf18k (ECDSA 256)
-  * #2: SHA256:W1Rh/k/tWxgJFSwvzf/E3mzaJvCIXpNtUl/e1bYMRCo (ED25519 256)
-  * #3: SHA256:+g20wQO5bJyYRO4aYq/utzpc47Pi9Iavt9nUwvmdSmE (RSA 3072)
-  ===========================================================================
-  ```
+   ```
+   ====== 2026-10-09 07:50:35 +0000 ==========================================
+   Tailscale IPs: 100.100.210.26 fd7a:115c:a1e0::892a:d21b
+   Connect via SSH using:
+   * ssh runner@100.100.210.26
+   * ssh runner@fd7a:115c:a1e0::892a:d21b
+   SSH key fingerprints:
+   * #1: SHA256:hiJFRr3JzLwHMfHci6Uu3N2sH6IxndWxS21nRrbf18k (ECDSA 256)
+   * #2: SHA256:W1Rh/k/tWxgJFSwvzf/E3mzaJvCIXpNtUl/e1bYMRCo (ED25519 256)
+   * #3: SHA256:+g20wQO5bJyYRO4aYq/utzpc47Pi9Iavt9nUwvmdSmE (RSA 3072)
+   ===========================================================================
+   ```
 
 4. Call the displayed SSH command from the client machine, e.g.:
 
-  ```bash
-  ssh runner@100.100.210.26
-  ```
+   ```bash
+   ssh runner@100.100.210.26
+   ```
 
-  Authenticate using your GitHub SSH key.
+   Authenticate using your GitHub SSH key.
 
 
 # 🔗 Useful Links
