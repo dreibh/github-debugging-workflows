@@ -41,8 +41,6 @@ Each debugging workflow performs the following steps:
   sudo tailscale up
   ```
 
-  You may need to authenticate to Tailscale with GitHub.
-
   It is strongly recommended to install [System-Tools](https://www.nntb.no/~dreibh/system-tools/) as well:
 
   ```bash
@@ -51,6 +49,32 @@ Each debugging workflow performs the following steps:
   ```
 
   Run `System-Info` and check the network interfaces. It must show a Tailscale interface `tailscale0` with Tailscale IP addresses.
+
+2. Generate an _ephemeral_ authentication key:
+
+  * In the Tailscale web interface, under
+    [Tailscale Admin Console](https://console.tailscale.com/admin) /
+    [settings](https://console.tailscale.com/admin/) /
+    [Keys](https://console.tailscale.com/admin/settings/keys),
+    click on "Generate auth key":
+
+    - Reusable: ON
+    - Emphemeral: ON
+
+  * The taken needs renewal after expiration!
+
+3. Set the authentication key in GitHub:
+
+   In the GitHub user interface for **your repository**, under
+   [Settings](https://github.com/dreibh/github-debugging-workflows/settings/) /
+   [Secrets and Variables](https://github.com/dreibh/github-debugging-workflows/settings/secrets) /
+   [Actions ](https://github.com/dreibh/github-debugging-workflows/settings/secrets/actions)
+   (the URLs are for **this** repository), click on "New repository secret":
+
+    - Name: TAILSCALE_AUTHKEY
+    - Value: Your Tailscale token
+
+  The taken needs renewal after expiration!
 
 
 ## Add the debugging workflows to your repository
@@ -99,11 +123,7 @@ Add the files, commit, and push.
   ssh runner@100.100.210.26
   ```
 
-  The log also contains the SSH server's key fingerprints, for verifying the key fingerprint presented by the client before accepting a new key.
-
-  You may need to authenticate to Tailscale with GitHub.
-
-  For Windows instances, connect using `runneradmin` (e.g., `ssh runneradmin@100.100.210.26`) and authenticate using either the displayed password or your GitHub SSH key.
+  Authenticate using your GitHub SSH key.
 
 
 # 🔗 Useful Links
