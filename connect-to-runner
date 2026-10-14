@@ -92,13 +92,19 @@ REPO_NAME=$(basename -s .git "$(git config --get remote.origin.url)")
 
 # ====== Determine the OS string and the correct SSH user ===================
 if [[ "${WORKFLOW_FILE}" == *"windows"* ]]; then
-   RUNNER_OS="Windows"
+   RUNNER_OS="windows"
    SSH_USER="runneradmin"
-elif [[ "${WORKFLOW_FILE}" == *"macos"* ]]; then
-   RUNNER_OS="macOS"
+elif [[ "${WORKFLOW_FILE}" =~ (macos|debian|ubuntu|centos|fedora|alpine|linux) ]]; then
+   RUNNER_OS="${BASH_REMATCH[1]}"
    SSH_USER="runner"
+
+   # GitHub Actions ${{ runner.os }} evaluates Ubuntu as "Linux", so we standardize it:
+   if [[ "${RUNNER_OS}" == "ubuntu" ]]; then
+      RUNNER_OS="linux"
+   fi
 else
-   RUNNER_OS="Linux"
+   # Fallback for unrecognized files
+   RUNNER_OS="linux"
    SSH_USER="runner"
 fi
 
@@ -148,9 +154,9 @@ while true ; do
    if run_tailscale_ping ; then
       IPV4="$(get_tailscale_ip -4)"
       IPV6="$(get_tailscale_ip -6)"
-      echo -e "✅ Runner is online!"
 
-      echo -e "\x1b[34m====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
+      echo -e "\n✅ Runner is online!"
+      echo -e "\x1b[34m====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================\x1b[0m"
       echo "Tailscale IPs: ${IPV4} ${IPV6}"
       echo "Connect via SSH using:"
 
@@ -161,11 +167,10 @@ while true ; do
          echo " * ssh ${SSH_USER}@${IPV4}"
          echo " * ssh ${SSH_USER}@${IPV6}"
       fi
-      echo -e "===========================================================================\x1b[34m"
-
+      echo -e "\x1b[34m===========================================================================\x1b[0m"
       break
    fi
 
    echo -n "."
-   sleep 10
+   sleep 15
 done
