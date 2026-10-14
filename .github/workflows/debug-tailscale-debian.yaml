@@ -39,14 +39,15 @@ jobs:
     container:
       image: debian:trixie
       # Grant required network privileges and inject the TUN device for Tailscale
-      options: --cap-add=NET_ADMIN --device /dev/net/tun
+      options: --cap-add=SYS_ADMIN --device /dev/net/tun
     steps:
+
       # ###### Prepare barebones Debian container ###########################
       - name: Prepare Debian Container
         run: |
           apt-get update
           # Added iptables and iproute2 for Tailscale networking
-          apt-get install -y sudo curl git openssh-server iptables iproute2
+          apt-get install -y sudo curl git openssh-server iptables iproute2 locales-all
 
           # Create 'runner' user to match your script's expectations
           useradd -m -s /bin/bash runner
@@ -76,7 +77,7 @@ jobs:
           chmod 600 /home/runner/.ssh/authorized_keys
           sudo chown -R runner:runner /home/runner/.ssh
 
-          # Start the standard SSH service directly
+          # Start the standard SSH service:
           sudo /usr/sbin/sshd
 
           echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
@@ -120,18 +121,30 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt install -y bash-completion build-essential cmake figlet gettext git joe sudo
+
           sudo apt install -y libmaxminddb-dev
+
           sudo apt install -y libbz2-dev libsctp-dev ghostscript graphicsmagick pdf2svg
+
           sudo apt install -y bison flex libcurl4-openssl-dev libssl-dev
+
           sudo apt install -y libboost-all-dev liblzma-dev
           sudo apt install -y libmariadb-dev libpqxx-dev libmongoc-dev libbson-dev
+
           sudo apt install -y qt6-base-dev qt6-tools-dev
+
           sudo apt install -y gimp libimage-exiftool-perl fonts-noto
+
           sudo apt install -y gnutls-bin libnss3-tools
+
           sudo apt install -y autoconf automake libglib2.0-dev libtool
+
           sudo apt install -y libpulse-dev
+
           sudo apt install -y libssl-dev libjansson-dev libldns-dev libmnl-dev libuv1-dev
+
           sudo apt install -y libgraphicsmagick1-dev
+
           sudo apt install -y python3 python3-venv python3-distro python3-psutil
 
           sudo -u runner bash -c '
@@ -148,7 +161,6 @@ jobs:
           ./autogen.sh
           sudo make install
 
-          sudo mkdir -p /etc/system-info.d/
           sudo cp \
              /home/runner/src/vmimage-builder-scripts/files/11-system-info.files/01-hostname \
              /home/runner/src/vmimage-builder-scripts/files/80-simulamet.files/02-simulamet \
@@ -166,7 +178,7 @@ jobs:
           sudo -u runner bash -c "cat /home/runner/src/vmimage-builder-scripts/files/05-user-settings.files/bashrc >>/home/runner/.bashrc"
 
           # Set a useful hostname:
-          sudo hostname "debian.github.test" || true
+          sudo Reset-Machine-ID --yes-to-all-i-am-really-sure -MSK -H "debian.github.test" || true
 
       # ###### Pause the runner for interactive SSH debugging ###############
       - name: Wait for interactive debugging
