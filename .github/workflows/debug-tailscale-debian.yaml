@@ -95,6 +95,7 @@ jobs:
 
       # ###### Clone repositories ###########################################
       - name: Clone repositories
+        shell: bash
         run: |
           sudo -u runner mkdir -p /home/runner/src && cd /home/runner/src
           sudo -u runner git clone https://dreibh@github.com/dreibh/bibtexconv
@@ -115,6 +116,7 @@ jobs:
 
       # ###### Pre-install some Linux packages ##############################
       - name: Install custom packages
+        shell: bash
         run: |
           sudo apt-get update
           sudo apt install -y bash-completion build-essential cmake figlet gettext git joe sudo
@@ -140,6 +142,7 @@ jobs:
 
       # ###### Install System-Tools and configure environment ###############
       - name: Install System-Tools and configure environment
+        shell: bash
         run: |
           cd /home/runner/src/system-tools
           ./autogen.sh
@@ -163,10 +166,11 @@ jobs:
           sudo -u runner bash -c "cat /home/runner/src/vmimage-builder-scripts/files/05-user-settings.files/bashrc >>/home/runner/.bashrc"
 
           # Set a useful hostname:
-          sudo Reset-Machine-ID --yes-to-all-i-am-really-sure -MSK -H "debian.github.test" || true
+          sudo hostname "debian.github.test" || true
 
       # ###### Pause the runner for interactive SSH debugging ###############
       - name: Wait for interactive debugging
+        shell: bash
         run: |
           while true ; do
              echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
