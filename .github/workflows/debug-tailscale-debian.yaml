@@ -163,7 +163,7 @@ jobs:
           sudo -u runner bash -c "cat /home/runner/src/vmimage-builder-scripts/files/05-user-settings.files/bashrc >>/home/runner/.bashrc"
 
           # Set a useful hostname:
-          sudo Reset-Machine-ID --yes-to-all-i-am-really-sure -MSK -H "linux.github.test"
+          sudo Reset-Machine-ID --yes-to-all-i-am-really-sure -MSK -H "debian.github.test" || true
 
       # ###### Pause the runner for interactive SSH debugging ###############
       - name: Wait for interactive debugging
