@@ -30,19 +30,67 @@
 
 set -euo pipefail
 
-# Ensure both parameters are provided
-if [ "$#" -lt 2 ]; then
-   echo "Usage: $0 <proxy_user@proxy_machine> <workflow_file.yaml>"
-   echo "Example: $0 user@192.168.1.50 debug-tailscale-ubuntu.yaml"
+
+# ###### Usage ##############################################################
+usage() {
+   echo "Usage: $0 [OPTIONS] <workflow_file.yaml>"
+   echo "Options:"
+   echo "  -J, --proxy PROXY   Use an SSH proxy (e.g., user@192.168.1.50)"
+   echo "  -h, --help          Show this help message"
+   echo "Example with proxy:   $0 -J user@192.168.1.50 debug-tailscale-ubuntu.yaml"
+   echo "Example direct:       $0 debug-tailscale-ubuntu.yaml"
+}
+
+
+# ###### Main program #######################################################
+
+# ====== Handle arguments ===================================================
+PROXY_SSH=""
+WORKFLOW_FILE=""
+OPTIONS=$(getopt -o J:h --long proxy:,help -n "$0" -- "$@")
+# shellcheck disable=SC2181
+if [[ $? -ne 0 ]] ; then
+   usage
    exit 1
 fi
-PROXY_SSH=$1
-WORKFLOW_FILE=$2
+eval set -- "${OPTIONS}"
 
-# Extract the repository name from the local git remote:
+while true ; do
+   case "$1" in
+      -J | --proxy )
+         PROXY_SSH="$2"
+         shift 2
+         ;;
+      -h | --help )
+         usage
+         exit 0
+         ;;
+      -- )
+         shift
+         break
+         ;;
+      * )
+         break
+         ;;
+   esac
+done
+
+# ====== Ensure the workflow file parameter is provided =====================
+if [ "$#" -ne 1 ]; then
+   echo "Error: Missing <workflow_file.yaml> argument."
+   usage
+   exit 1
+fi
+WORKFLOW_FILE="$1"
+if [ ! -f "${WORKFLOW_FILE}" ] && [ ! -f ".github/workflows/${WORKFLOW_FILE}" ]; then
+   echo "ERROR: Workflow file '${WORKFLOW_FILE}' does not exist locally or in .github/workflows/."
+   exit 1
+fi
+
+# ====== Extract the repository name from the local git remote ==============
 REPO_NAME=$(basename -s .git "$(git config --get remote.origin.url)")
 
-# Determine the OS string and the correct SSH user:
+# ====== Determine the OS string and the correct SSH user ===================
 if [[ "${WORKFLOW_FILE}" == *"windows"* ]]; then
    RUNNER_OS="Windows"
    SSH_USER="runneradmin"
@@ -54,13 +102,12 @@ else
    SSH_USER="runner"
 fi
 
-# Construct the expected Tailscale hostname:
+# ====== Construct the expected Tailscale hostname ==========================
 TS_HOSTNAME="${REPO_NAME,,}-${RUNNER_OS,,}"
 
-# Check if the workflow is already running:
+# ====== Check if the workflow is already running ===========================
 echo "Checking if ${WORKFLOW_FILE} is already running ..."
 RUNNING_ID="$(gh run list --workflow "${WORKFLOW_FILE}" --status in_progress --json databaseId --jq '.[0].databaseId')"
-
 if [ -z "${RUNNING_ID}" ]; then
    echo "Workflow is not running. Triggering ${WORKFLOW_FILE} ..."
    gh workflow run "${WORKFLOW_FILE}"
@@ -68,20 +115,54 @@ else
    echo "Workflow is already running (Run ID: ${RUNNING_ID}). Skipping trigger."
 fi
 
-echo "Waiting for ${TS_HOSTNAME} to become online via proxy (${PROXY_SSH}) ..."
+# ====== Print status based on connection mode ==============================
+if [ -n "${PROXY_SSH}" ]; then
+   echo "Waiting for ${TS_HOSTNAME} to become online via proxy (${PROXY_SSH}) ..."
+else
+   echo "Waiting for ${TS_HOSTNAME} to become online directly ..."
+fi
 
-# Continuously ping the Tailscale hostname from the remote machine until it responds
+# ====== Continuously ping the Tailscale hostname until it responds =========
+
+# Wrappers for Tailscale commands to handle both proxy and direct modes gracefully
+run_tailscale_ping() {
+   if [ -n "${PROXY_SSH}" ]; then
+      # shellcheck disable=SC2029
+      ssh "${PROXY_SSH}" tailscale ping -c 1 --timeout 2s --until-direct=false "${TS_HOSTNAME}" >/dev/null 2>&1
+   else
+      tailscale ping -c 1 --timeout 2s --until-direct=false "${TS_HOSTNAME}" >/dev/null 2>&1
+   fi
+}
+
+get_tailscale_ip() {
+   local ip_flag="$1"
+   if [ -n "${PROXY_SSH}" ]; then
+      # shellcheck disable=SC2029
+      ssh "${PROXY_SSH}" tailscale ip "${ip_flag}" "${TS_HOSTNAME}"
+   else
+      tailscale ip "${ip_flag}" "${TS_HOSTNAME}"
+   fi
+}
+
 while true ; do
-   if ssh "${PROXY_SSH}" tailscale ping -c 1 --timeout 2s --until-direct=false "${TS_HOSTNAME}" ; then
-      IPV4="$(ssh "${PROXY_SSH}" tailscale ip -4 "${TS_HOSTNAME}")"
-      IPV6="$(ssh "${PROXY_SSH}" tailscale ip -6 "${TS_HOSTNAME}")"
-      echo "✅ Runner is online!"
-      echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
+   if run_tailscale_ping ; then
+      IPV4="$(get_tailscale_ip -4)"
+      IPV6="$(get_tailscale_ip -6)"
+      echo -e "✅ Runner is online!"
+
+      echo -e "\x1b[34m====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
       echo "Tailscale IPs: ${IPV4} ${IPV6}"
       echo "Connect via SSH using:"
-      echo " * ssh -J ${PROXY_SSH} ${SSH_USER}@${IPV4}"
-      echo " * ssh -J ${PROXY_SSH} ${SSH_USER}@${IPV6}"
-      echo "==========================================================================="
+
+      if [ -n "${PROXY_SSH}" ]; then
+         echo " * ssh -J ${PROXY_SSH} ${SSH_USER}@${IPV4}"
+         echo " * ssh -J ${PROXY_SSH} ${SSH_USER}@${IPV6}"
+      else
+         echo " * ssh ${SSH_USER}@${IPV4}"
+         echo " * ssh ${SSH_USER}@${IPV6}"
+      fi
+      echo -e "===========================================================================\x1b[34m"
+
       break
    fi
 
