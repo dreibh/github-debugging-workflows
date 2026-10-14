@@ -16,18 +16,22 @@ name: Debian Trixie Debugging Workflow via Tailscale
 on: [ workflow_dispatch ]   # Workflow is triggered manually
 
 jobs:
-  # #########################################################################
+# #########################################################################
   # #### Debian Trixie Debugging Workflow via Tailscale                  ####
   # #########################################################################
   tailscale-debug-debian-trixie:
     runs-on: ubuntu-latest
-    container: debian:trixie
+    container:
+      image: debian:trixie
+      # Grant required network privileges and inject the TUN device for Tailscale
+      options: --cap-add=NET_ADMIN --device /dev/net/tun
     steps:
       # ###### Prepare barebones Debian container ###########################
       - name: Prepare Debian Container
         run: |
           apt-get update
-          apt-get install -y sudo curl git openssh-server
+          # Added iptables and iproute2 for Tailscale networking
+          apt-get install -y sudo curl git openssh-server iptables iproute2
 
           # Create 'runner' user to match your script's expectations
           useradd -m -s /bin/bash runner
