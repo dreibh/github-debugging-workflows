@@ -66,6 +66,7 @@ jobs:
 
       # ###### Enable SSH daemon ############################################
       - name: Enable SSH
+        shell: bash
         run: |
           # Fetch public SSH keys for the GitHub user who launched this workflow:
           echo "Fetching SSH public keys for GitHub user: ${{ github.actor }}..."
