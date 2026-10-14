@@ -48,9 +48,10 @@ jobs:
         uses: tailscale/github-action@v4
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          hostname: ${{ github.event.repository.name }}-${{ runner.os }}
 
-      # ###### Enable Tailscale SSH daemon ##################################
-      - name: Enable Windows OpenSSH Server
+      # ###### Enable SSH daemon ############################################
+      - name: Enable SSH
         shell: powershell
         run: |
           # Ensure OpenSSH.Server capability is installed and running:
@@ -80,7 +81,7 @@ jobs:
              -Force
 
           $now = Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz"
-          Write-Host "====== $now =========================================="
+          Write-Host "====== Access at $now ================================"
           Write-Host "Tailscale IPs: $(tailscale ip)"
           Write-Host "Connect via SSH using:"
           Write-Host " * ssh runneradmin@$(tailscale ip -4)"
@@ -190,7 +191,7 @@ jobs:
       - name: Wait for SSH debugging
         run: |
           while true ; do
-             echo "====== $(date +"%Y-%m-%d %H:%M:%S %z") =========================================="
+             echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
              echo "Tailscale IPs: $(tailscale ip | xargs)"
              echo "Connect via SSH using:"
              echo " * ssh runneradmin@$(tailscale ip -4)"

@@ -44,13 +44,14 @@ jobs:
         uses: tailscale/github-action@v4
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          hostname: ${{ github.event.repository.name }}-${{ runner.os }}
 
       # # ###### Enable Tailscale SSH daemon ##################################
       # - name: Enable Tailscale SSH
       #   run: |
       #     sudo tailscale set --ssh
       #
-      #     echo "====== $(date +"%Y-%m-%d %H:%M:%S %z") =========================================="
+      #     echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
       #     echo "Tailscale IPs: $(tailscale ip | xargs)"
       #     echo "Connect via SSH using:"
       #     echo " * ssh runner@$(tailscale ip -4)"
@@ -64,8 +65,8 @@ jobs:
       #     done < <(find /etc/ssh -maxdepth 1 -name "ssh_host_*.pub" -print | sort)
       #     echo "==========================================================================="
 
-      # ###### Enable Standard SSH daemon ##################################
-      - name: Enable Standard SSH
+      # ###### Enable SSH daemon ############################################
+      - name: Enable SSH
         run: |
           # Fetch public SSH keys for the GitHub user who launched this workflow:
           echo "Fetching SSH public keys for GitHub user: ${{ github.actor }}..."
@@ -78,7 +79,7 @@ jobs:
           # Start the standard SSH service
           sudo systemctl start ssh
 
-          echo "====== $(date +"%Y-%m-%d %H:%M:%S %z") =========================================="
+          echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
           echo "Tailscale IPs: $(tailscale ip | xargs)"
           echo "Connect via SSH using:"
           echo " * ssh runner@$(tailscale ip -4)"
@@ -180,7 +181,7 @@ jobs:
       - name: Wait for interactive debugging
         run: |
           while true ; do
-             echo "====== $(date +"%Y-%m-%d %H:%M:%S %z") =========================================="
+             echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
              echo "Tailscale IPs: $(tailscale ip | xargs)"
              echo "Connect via SSH using:"
              echo " * ssh runner@$(tailscale ip -4)"
