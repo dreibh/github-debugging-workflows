@@ -114,10 +114,10 @@ jobs:
             sudo -u runner git clone https://dreibh@github.com/simula/nornet-vmimage-builder-scripts.git vmimage-builder-scripts
 
             # 6. Pre-install NetBSD packages via pkgin
-            pkgin -y install bash cmake gettext gcc15 git gmake joe sudo wget
+            # pkgin -y install bash cmake gettext gcc15 git gmake joe sudo wget
 
 
-            pkgin -y install libidn2 libiberty libmaxminddb
+            # pkgin -y install libidn2 libiberty libmaxminddb
 
             # pkgin -y install ghostscript GraphicsMagick pdf2svg
             #
@@ -148,8 +148,8 @@ jobs:
 
             # 7. Install System-Tools & Environment Settings
             cd /home/runner/src/system-tools
-            sudo -u runner ./autogen.sh
-            make install
+            # !!! sudo -u runner ./autogen.sh
+            # !!! make install
 
             mkdir -p /usr/pkg/etc/system-info.d/
             cp /home/runner/src/vmimage-builder-scripts/files/11-system-info.files/01-hostname \
