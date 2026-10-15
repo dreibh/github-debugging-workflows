@@ -35,6 +35,10 @@ jobs:
           release: "11.0"
           envs: "TAILSCALE_AUTHKEY GITHUB_ACTOR REPO_NAME"
           prepare: |
+            export PATH="/usr/pkg/bin:/usr/pkg/sbin:/sbin:/usr/sbin:$PATH"
+            if ! command -v pkgin >/dev/null 2>&1; then
+               /usr/sbin/pkg_add pkgin
+            fi
             pkgin -y update
             pkgin -y install bash curl git sudo tailscale openssh mozilla-rootcerts
 
