@@ -62,7 +62,7 @@ jobs:
             chmod 600 /home/runner/.ssh/authorized_keys
             chown -R runner:wheel /home/runner
 
-            # Enable and start SSH service
+            # 4. Enable and start SSH service
             sysrc sshd_enable="YES"
             service sshd restart || /usr/sbin/sshd
             echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
@@ -79,7 +79,7 @@ jobs:
             done
             echo "==========================================================================="
 
-            # 4. Clone repositories
+            # 5. Clone repositories:
             mkdir -p /home/runner/src
             chown -R runner:wheel /home/runner/src
             cd /home/runner/src
@@ -99,10 +99,38 @@ jobs:
             sudo -u runner git clone https://dreibh@github.com/dreibh/tsctp
             sudo -u runner git clone https://dreibh@github.com/simula/nornet-vmimage-builder-scripts.git vmimage-builder-scripts
 
-            # 5. Pre-install FreeBSD packages
-            pkg install -y bash cmake gettext gcc git gmake joe pwgen wget
+            # 6. Install System-Tools & Environment Settings:
+            pkg install -y bash cmake figlet getopt gettext gcc git gmake joe sudo wget
+            cd /home/runner/src/system-tools
+            sudo -u runner ./autogen.sh
+            make install
 
+            mkdir -p /usr/local/etc/system-info.d/
+            cp /home/runner/src/vmimage-builder-scripts/files/11-system-info.files/01-hostname \
+               /home/runner/src/vmimage-builder-scripts/files/80-simulamet.files/02-simulamet \
+               /usr/local/etc/system-info.d/ || true
 
+            sudo -u runner bash -c "cat >>/home/runner/.bash_profile <<'INNER_EOF'
+            [ -f \$HOME/.bashrc ] && source \$HOME/.bashrc
+            INNER_EOF"
+
+            sudo -u runner bash -c "cat >>/home/runner/.bashrc <<'INNER_EOF'
+            [[ -r \"/usr/local/share/bash-completion/bash_completion\" ]] && . \"/usr/local/share/bash-completion/bash_completion\"
+            INNER_EOF"
+            sudo -u runner bash -c "cat /home/runner/src/vmimage-builder-scripts/files/05-user-settings.files/bashrc >>/home/runner/.bashrc"
+
+            cat >/usr/local/etc/profile <<'EOF'
+            if [ "${_loaded}" = "" ] ; then
+               if [ -e /etc/profile ] ; then
+                  . /etc/profile
+               fi
+            fi
+            EOF
+
+            # 7. Set a useful hostname:
+            Reset-Machine-ID --yes-to-all-i-am-really-sure -MSK -H "freebsd.github.test" || true
+
+            # 8. Pre-install FreeBSD packages:
             pkg install -y libidn2 libmaxminddb
 
             pkg install -y ghostscript10 GraphicsMagick pdf2svg
@@ -132,29 +160,7 @@ jobs:
               pip install distro psutil
             '
 
-            # 6. Install System-Tools & Environment Settings
-            cd /home/runner/src/system-tools
-            sudo -u runner ./autogen.sh
-            make install
-
-            mkdir -p /usr/local/etc/system-info.d/
-            cp /home/runner/src/vmimage-builder-scripts/files/11-system-info.files/01-hostname \
-               /home/runner/src/vmimage-builder-scripts/files/80-simulamet.files/02-simulamet \
-               /usr/local/etc/system-info.d/ || true
-
-            sudo -u runner bash -c "cat >>/home/runner/.bash_profile <<'INNER_EOF'
-            [ -f \$HOME/.bashrc ] && source \$HOME/.bashrc
-            INNER_EOF"
-
-            sudo -u runner bash -c "cat >>/home/runner/.bashrc <<'INNER_EOF'
-            [[ -r \"/usr/local/share/bash-completion/bash_completion\" ]] && . \"/usr/local/share/bash-completion/bash_completion\"
-            INNER_EOF"
-            sudo -u runner bash -c "cat /home/runner/src/vmimage-builder-scripts/files/05-user-settings.files/bashrc >>/home/runner/.bashrc"
-
-            # Set hostname
-            hostname "freebsd.github.test"
-
-            # 7. Pause and keep alive for interactive SSH debugging
+            # 9. Pause and keep alive for interactive SSH debugging
             while true ; do
                echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
                echo "Tailscale IPs: $(tailscale ip | xargs)"
