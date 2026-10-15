@@ -109,7 +109,7 @@ jobs:
 
             sudo pkg install -y bison flex curl openssl
 
-            sudo pkg install -y install boost zstd
+            sudo pkg install -y boost-libs zstd
 
             sudo pkg install -y qt6-base qt6-tools
 
