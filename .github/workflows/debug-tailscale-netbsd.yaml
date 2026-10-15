@@ -114,6 +114,9 @@ jobs:
             sudo -u runner git clone https://dreibh@github.com/simula/nornet-vmimage-builder-scripts.git vmimage-builder-scripts
 
             # 6. Pre-install NetBSD packages via pkgin
+            pkgin -y install bash cmake gettext gcc15 git gmake joe sudo wget
+
+
             pkgin -y install libidn2 libiberty libmaxminddb
 
             # pkgin -y install ghostscript GraphicsMagick pdf2svg
