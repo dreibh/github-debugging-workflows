@@ -65,6 +65,19 @@ jobs:
             # Enable and start SSH service
             sysrc sshd_enable="YES"
             service sshd restart || /usr/sbin/sshd
+            echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
+            echo "Tailscale IPs: $(tailscale ip | xargs)"
+            echo "Connect via SSH using:"
+            echo " * ssh runner@$(tailscale ip -4)"
+            echo " * ssh runner@$(tailscale ip -6)"
+            echo "SSH key fingerprints:"
+            keyNumber=1
+            while IFS= read -r key ; do
+              echo -n " * #${keyNumber}: "
+              ssh-keygen -lf "${key}" | sed -e "s/^\([0-9]*\) \([^ ]*\) \(.*\) (\(.*\))$/\2 (\4 \1)/g"
+              keyNumber=$((keyNumber+1))
+            done < <(find /etc/ssh /usr/local/etc/ssh -maxdepth 1 -name "ssh_host_*.pub" 2>/dev/null | sort)
+            echo "==========================================================================="
 
             # 4. Clone repositories
             mkdir -p /home/runner/src
@@ -111,7 +124,7 @@ jobs:
             pkg install -y python314
 
             sudo -u runner bash -c '
-              python3 -m venv /home/runner/venv
+              python3.14 -m venv /home/runner/venv
               . /home/runner/venv/bin/activate
               pip install distro psutil
             '
