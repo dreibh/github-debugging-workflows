@@ -167,10 +167,16 @@ while true ; do
          echo " * ssh ${SSH_USER}@${IPV4}"
          echo " * ssh ${SSH_USER}@${IPV6}"
       fi
-      echo -e "\x1b[34m===========================================================================\x1b[0m"
+      echo -e "\x1b[34m===========================================================================\x1b[0m\n"
+
+      echo "Connecting ..."
+      if [ -n "${PROXY_SSH}" ]; then
+        ssh -J "${PROXY_SSH}" "${SSH_USER}@${IPV4}"
+      else
+         ssh "${SSH_USER}@${IPV4}"
+      fi
       break
    fi
-
    echo -n "."
    sleep 15
 done
