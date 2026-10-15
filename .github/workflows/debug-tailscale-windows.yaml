@@ -35,7 +35,7 @@ jobs:
   # #### Windows Debugging Workflow via Tailscale                        ####
   # #########################################################################
   tailscale-debug-windows:
-    runs-on: windows-latest
+    runs-on: windows-2025   # windows-latest
     defaults:
       run:
         shell: bash   # Use Git Bash for command execution
