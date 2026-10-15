@@ -24,8 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # ###### Boot NetBSD 11.0 VM & Execute Debug Environment ##############
-      - name: Start NetBSD 11.0 VM & Debugging Environment
+      # ###### Start NetBSD VM and Execute Debug Environment ################
+      - name: Start NetBSD VM and Execute Debug Environment
         uses: vmactions/netbsd-vm@v1
         env:
           TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
@@ -39,6 +39,14 @@ jobs:
             if ! command -v pkgin >/dev/null 2>&1; then
                /usr/sbin/pkg_add pkgin
             fi
+
+            pkgsrcURL="https://cdn.netbsd.org/pub/pkgsrc/packages/NetBSD"
+            arch="$(uname -p)"
+            release="$(uname -r | cut -d_ -f1)_2026Q2"
+            sed -e 's,^[^#].*$,'"$pkgsrcURL"'/$arch/'"$release"'/All,' \
+               /usr/pkg/etc/pkgin/repositories.conf >/tmp/repositories.conf
+            mv /tmp/repositories.conf /usr/pkg/etc/pkgin/repositories.conf
+
             pkgin -y update
             pkgin -y install bash curl git sudo tailscale openssh mozilla-rootcerts
 
