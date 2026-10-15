@@ -69,10 +69,6 @@ jobs:
           $pubKeys | Out-File -FilePath $authKeysPath -Encoding ascii
           icacls.exe $authKeysPath /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"
 
-          # Set a password for runneradmin to allow SSH authentication:
-          $password = ConvertTo-SecureString "DebugPassword123!" -AsPlainText -Force
-          Set-LocalUser -Name "runneradmin" -Password $password
-
           # Set shell to Bash:
           New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" `
              -Name "DefaultShell" `
@@ -85,7 +81,6 @@ jobs:
           Write-Host "Tailscale IPs: $(tailscale ip)"
           Write-Host "Connect via SSH using:"
           Write-Host " * ssh runneradmin@$(tailscale ip -4)"
-          Write-Host "Password: DebugPassword123!"
           Write-Host "SSH key fingerprints:"
           $keyNumber = 1
           Get-ChildItem "$env:ProgramData\ssh\ssh_host_*.pub" | Sort-Object Name | ForEach-Object {
@@ -195,7 +190,6 @@ jobs:
              echo "Tailscale IPs: $(tailscale ip | xargs)"
              echo "Connect via SSH using:"
              echo " * ssh runneradmin@$(tailscale ip -4)"
-             echo "Password: DebugPassword123!"
              echo "SSH key fingerprints:"
              keyNumber=1
              while IFS= read -r key ; do
