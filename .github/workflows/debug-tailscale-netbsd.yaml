@@ -44,8 +44,9 @@ jobs:
 
           run: |
             set -eu
+            export PATH="/usr/pkg/bin:/usr/pkg/sbin:/sbin:/usr/sbin:$PATH"
 
-            # 1. Copy rc.d script, enable and start tailscaled
+            # 1. Copy rc.d script, enable and start tailscaled:
             if [ -f /usr/pkg/share/examples/rc.d/tailscaled ]; then
                cp /usr/pkg/share/examples/rc.d/tailscaled /etc/rc.d/tailscaled
                chmod 755 /etc/rc.d/tailscaled
@@ -57,7 +58,7 @@ jobs:
             TS_HOSTNAME="${REPO_NAME}-netbsd"
             tailscale up --authkey="${TAILSCALE_AUTHKEY}" --hostname="${TS_HOSTNAME}"
 
-            # 2. Create 'runner' user
+            # 2. Create 'runner' user:
             if ! user show runner >/dev/null 2>&1; then
                if [ -d /home/runner ]; then
                   useradd -s /usr/pkg/bin/bash -g wheel runner
@@ -67,7 +68,7 @@ jobs:
                echo "runner ALL=(ALL) NOPASSWD:ALL" >> /usr/pkg/etc/sudoers
             fi
 
-            # 3. Setup SSH keys for the GitHub user
+            # 3. Setup SSH keys for the GitHub user:
             echo "Fetching SSH public keys for GitHub user: ${GITHUB_ACTOR}..."
             mkdir -p /home/runner/.ssh
             curl -sL "https://github.com/${GITHUB_ACTOR}.keys" >> /home/runner/.ssh/authorized_keys
@@ -75,7 +76,7 @@ jobs:
             chmod 600 /home/runner/.ssh/authorized_keys
             chown -R runner:wheel /home/runner
 
-            # 4. Enable and start SSH service
+            # 4. Enable and start SSH service:
             echo 'sshd=YES' >> /etc/rc.conf
             service sshd restart || /usr/sbin/sshd
             echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
@@ -94,4 +95,90 @@ jobs:
 
             # 5. Clone repositories
             mkdir -p /home/runner/src
-            chown -R runner:wheel /home/runner
+            chown -R runner:wheel /home/runner/src
+            cd /home/runner/src
+            sudo -u runner git clone https://dreibh@github.com/dreibh/bibtexconv
+            sudo -u runner git clone https://dreibh@github.com/simula/dynmhs
+            sudo -u runner git clone https://dreibh@github.com/dreibh/fractgen
+            sudo -u runner git clone https://dreibh@github.com/dreibh/hipercontracer
+            sudo -u runner git clone https://dreibh@github.com/dreibh/netperfmeter
+            sudo -u runner git clone https://dreibh@github.com/dreibh/rserpooldemo
+            sudo -u runner git clone https://dreibh@github.com/dreibh/rsplib
+            sudo -u runner git clone https://dreibh@github.com/dreibh/rtpaudio
+            sudo -u runner git clone https://dreibh@github.com/dreibh/sctplib
+            sudo -u runner git clone https://dreibh@github.com/dreibh/slideshow
+            sudo -u runner git clone https://dreibh@github.com/dreibh/socketapi
+            sudo -u runner git clone https://dreibh@github.com/dreibh/subnetcalc
+            sudo -u runner git clone https://dreibh@github.com/dreibh/system-tools
+            sudo -u runner git clone https://dreibh@github.com/dreibh/tsctp
+            sudo -u runner git clone https://dreibh@github.com/simula/nornet-vmimage-builder-scripts.git vmimage-builder-scripts
+
+            # 6. Pre-install NetBSD packages via pkgin
+            pkgin -y install libidn2 libiberty libmaxminddb
+
+            pkgin -y install ghostscript GraphicsMagick pdf2svg
+
+            pkgin -y install bison flex curl openssl
+
+            pkgin -y install libinotify boost
+            pkgin -y install mariadb-client libpqxx mongo-c-driver
+
+            pkgin -y install qt6
+
+            pkgin -y install gimp p5-Image-ExifTool
+
+            pkgin -y install gnutls nss
+
+            pkgin -y install autoconf automake glib2 libtool pkgconf
+
+            pkgin -y install pulseaudio
+
+            pkgin -y install openssl jansson ldns libuv
+
+            pkgin -y install python314
+
+            sudo -u runner bash -c '
+              python3.14 -m venv /home/runner/venv
+              . /home/runner/venv/bin/activate
+              pip install distro psutil
+            '
+
+            # 7. Install System-Tools & Environment Settings
+            cd /home/runner/src/system-tools
+            sudo -u runner ./autogen.sh
+            make install
+
+            mkdir -p /usr/pkg/etc/system-info.d/
+            cp /home/runner/src/vmimage-builder-scripts/files/11-system-info.files/01-hostname \
+               /home/runner/src/vmimage-builder-scripts/files/80-simulamet.files/02-simulamet \
+               /usr/pkg/etc/system-info.d/ || true
+
+            sudo -u runner bash -c "cat >>/home/runner/.bash_profile <<'INNER_EOF'
+            [ -f \$HOME/.bashrc ] && source \$HOME/.bashrc
+            INNER_EOF"
+
+            sudo -u runner bash -c "cat >>/home/runner/.bashrc <<'INNER_EOF'
+            [[ -r \"/usr/pkg/share/bash-completion/bash_completion\" ]] && . \"/usr/pkg/share/bash-completion/bash_completion\"
+            INNER_EOF"
+            sudo -u runner bash -c "cat /home/runner/src/vmimage-builder-scripts/files/05-user-settings.files/bashrc >>/home/runner/.bashrc"
+
+            # Set hostname
+            hostname "netbsd.github.test"
+
+            # 8. Pause and keep alive for interactive SSH debugging
+            while true ; do
+               echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
+               echo "Tailscale IPs: $(tailscale ip | xargs)"
+               echo "Connect via SSH using:"
+               echo " * ssh runner@$(tailscale ip -4)"
+               echo " * ssh runner@$(tailscale ip -6)"
+               echo "SSH key fingerprints:"
+               keyNumber=1
+               for key in $(find /etc/ssh /usr/pkg/etc/ssh -maxdepth 1 -name "ssh_host_*.pub" 2>/dev/null | sort) ; do
+                 echo -n " * #${keyNumber}: "
+                 ssh-keygen -lf "${key}" | sed -e "s/^\([0-9]*\) \([^ ]*\) \(.*\) (\(.*\))$/\2 (\4 \1)/g"
+                 keyNumber=$((keyNumber+1))
+               done
+               echo "==========================================================================="
+               sleep 300
+            done
