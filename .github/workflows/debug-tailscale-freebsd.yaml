@@ -24,8 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # ###### Boot FreeBSD 15.1 VM & Execute Debug Environment #############
-      - name: Start FreeBSD 15.1 VM & Debugging Environment
+      # ###### Start FreeBSD VM and Execute Debug Environment ###############
+      - name: Start FreeBSD VM and Execute Debug Environment
         uses: vmactions/freebsd-vm@v1
         env:
           TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}

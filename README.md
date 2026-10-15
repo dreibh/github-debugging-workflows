@@ -8,6 +8,8 @@ This repository contains GitHub Workflows for debugging GitHub Workflow instance
   [`.github/workflows/debug-tailscale-ubuntu.yaml`](.github/workflows/debug-tailscale-ubuntu.yaml)
 * Debian Debugging Workflow:
   [`.github/workflows/debug-tailscale-debian.yaml`](.github/workflows/debug-tailscale-debian.yaml)
+* FreeBSD Debugging Workflow:
+  [`.github/workflows/debug-tailscale-freebsd.yaml`](.github/workflows/debug-tailscale-freebsd.yaml)
 * MacOS Debugging Workflow:
   [`.github/workflows/debug-tailscale-macos.yaml`](.github/workflows/debug-tailscale-macos.yaml)
 * Windows Debugging Workflow:
@@ -89,6 +91,8 @@ Copy the workflow YAML files from [`.github/workflows`](.github/workflows/) of _
   [`.github/workflows/debug-tailscale-ubuntu.yaml`](.github/workflows/debug-tailscale-ubuntu.yaml)
 * Debian Debugging Workflow:
   [`.github/workflows/debug-tailscale-debian.yaml`](.github/workflows/debug-tailscale-debian.yaml)
+* FreeBSD Debugging Workflow:
+  [`.github/workflows/debug-tailscale-freebsd.yaml`](.github/workflows/debug-tailscale-freebsd.yaml)
 * MacOS Debugging Workflow:
   [`.github/workflows/debug-tailscale-macos.yaml`](.github/workflows/debug-tailscale-macos.yaml)
 * Windows Debugging Workflow:
@@ -104,6 +108,7 @@ Add the files, commit, and push.
 
    * Ubuntu Debugging Workflow via Tailscale
    * Debian Debugging Workflow via Tailscale
+   * FreeBSD Debugging Workflow via Tailscale
    * MacOS Debugging Workflow via Tailscale
    * Windows Debugging Workflow via Tailscale
 
@@ -159,6 +164,7 @@ Add the files, commit, and push.
      The workflow `WORKFLOW_YAML_FILE` must exist under [`.github/workflows`](.github/workflows), e.g.
      [`debug-tailscale-ubuntu.yaml`](.github/workflows/debug-tailscale-ubuntu.yaml),
      [`debug-tailscale-debian.yaml`](.github/workflows/debug-tailscale-debian.yaml),
+     [`debug-tailscale-freebsd.yaml`](.github/workflows/debug-tailscale-freebsd.yaml),
      [`debug-tailscale-macos.yaml`](.github/workflows/debug-tailscale-macos.yaml), or
      [`debug-tailscale-windows.yaml`](.github/workflows/debug-tailscale-windows.yaml) in **this** repository.
 
