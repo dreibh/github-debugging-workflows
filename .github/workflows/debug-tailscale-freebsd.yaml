@@ -11,21 +11,6 @@
 #
 # GitHub Debugging Workflows via Tailscale
 # Copyright (C) 2026 by Thomas Dreibholz
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Contact: dreibh@simula.no
 
 name: FreeBSD 15.1 Debugging Workflow via Tailscale
 on: [ workflow_dispatch ]   # Workflow is triggered manually
@@ -71,19 +56,20 @@ jobs:
 
             # 3. Setup SSH keys for the GitHub user
             echo "Fetching SSH public keys for GitHub user: ${GITHUB_ACTOR}..."
-            mkdir -p /usr/home/runner/.ssh
-            curl -sL "https://github.com/${GITHUB_ACTOR}.keys" >> /usr/home/runner/.ssh/authorized_keys
-            chmod 700 /usr/home/runner/.ssh
-            chmod 600 /usr/home/runner/.ssh/authorized_keys
-            chown -R runner:wheel /usr/home/runner/.ssh
+            mkdir -p /home/runner/.ssh
+            curl -sL "https://github.com/${GITHUB_ACTOR}.keys" >> /home/runner/.ssh/authorized_keys
+            chmod 700 /home/runner/.ssh
+            chmod 600 /home/runner/.ssh/authorized_keys
+            chown -R runner:wheel /home/runner
 
             # Enable and start SSH service
             sysrc sshd_enable="YES"
             service sshd restart || /usr/sbin/sshd
 
             # 4. Clone repositories
-            sudo -u runner mkdir -p /usr/home/runner/src
-            cd /usr/home/runner/src
+            mkdir -p /home/runner/src
+            chown -R runner:wheel /home/runner/src
+            cd /home/runner/src
             sudo -u runner git clone https://dreibh@github.com/dreibh/bibtexconv
             sudo -u runner git clone https://dreibh@github.com/simula/dynmhs
             sudo -u runner git clone https://dreibh@github.com/dreibh/fractgen
@@ -107,7 +93,7 @@ jobs:
 
             pkg install -y bison flex curl openssl
 
-            pkg install -y install boost zstd
+            pkg install -y boost-libs zstd
 
             pkg install -y qt6-base qt6-tools
 
@@ -125,29 +111,29 @@ jobs:
             pkg install -y python314
 
             sudo -u runner bash -c '
-              python3 -m venv /usr/home/runner/venv
-              . /usr/home/runner/venv/bin/activate
+              python3 -m venv /home/runner/venv
+              . /home/runner/venv/bin/activate
               pip install distro psutil
             '
 
             # 6. Install System-Tools & Environment Settings
-            cd /usr/home/runner/src/system-tools
+            cd /home/runner/src/system-tools
             sudo -u runner ./autogen.sh
             make install
 
             mkdir -p /usr/local/etc/system-info.d/
-            cp /usr/home/runner/src/vmimage-builder-scripts/files/11-system-info.files/01-hostname \
-               /usr/home/runner/src/vmimage-builder-scripts/files/80-simulamet.files/02-simulamet \
+            cp /home/runner/src/vmimage-builder-scripts/files/11-system-info.files/01-hostname \
+               /home/runner/src/vmimage-builder-scripts/files/80-simulamet.files/02-simulamet \
                /usr/local/etc/system-info.d/ || true
 
-            sudo -u runner bash -c "cat >>/usr/home/runner/.bash_profile <<'INNER_EOF'
+            sudo -u runner bash -c "cat >>/home/runner/.bash_profile <<'INNER_EOF'
             [ -f \$HOME/.bashrc ] && source \$HOME/.bashrc
             INNER_EOF"
 
-            sudo -u runner bash -c "cat >>/usr/home/runner/.bashrc <<'INNER_EOF'
+            sudo -u runner bash -c "cat >>/home/runner/.bashrc <<'INNER_EOF'
             [[ -r \"/usr/local/share/bash-completion/bash_completion\" ]] && . \"/usr/local/share/bash-completion/bash_completion\"
             INNER_EOF"
-            sudo -u runner bash -c "cat /usr/home/runner/src/vmimage-builder-scripts/files/05-user-settings.files/bashrc >>/usr/home/runner/.bashrc"
+            sudo -u runner bash -c "cat /home/runner/src/vmimage-builder-scripts/files/05-user-settings.files/bashrc >>/home/runner/.bashrc"
 
             # Set hostname
             hostname "freebsd.github.test"
