@@ -72,11 +72,11 @@ jobs:
             echo " * ssh runner@$(tailscale ip -6)"
             echo "SSH key fingerprints:"
             keyNumber=1
-            while IFS= read -r key ; do
+            for key in $(find /etc/ssh /usr/local/etc/ssh -maxdepth 1 -name "ssh_host_*.pub" 2>/dev/null | sort) ; do
               echo -n " * #${keyNumber}: "
               ssh-keygen -lf "${key}" | sed -e "s/^\([0-9]*\) \([^ ]*\) \(.*\) (\(.*\))$/\2 (\4 \1)/g"
               keyNumber=$((keyNumber+1))
-            done < <(find /etc/ssh /usr/local/etc/ssh -maxdepth 1 -name "ssh_host_*.pub" 2>/dev/null | sort)
+            done
             echo "==========================================================================="
 
             # 4. Clone repositories
@@ -160,11 +160,11 @@ jobs:
                echo " * ssh runner@$(tailscale ip -6)"
                echo "SSH key fingerprints:"
                keyNumber=1
-               while IFS= read -r key ; do
+               for key in $(find /etc/ssh /usr/local/etc/ssh -maxdepth 1 -name "ssh_host_*.pub" 2>/dev/null | sort) ; do
                  echo -n " * #${keyNumber}: "
                  ssh-keygen -lf "${key}" | sed -e "s/^\([0-9]*\) \([^ ]*\) \(.*\) (\(.*\))$/\2 (\4 \1)/g"
                  keyNumber=$((keyNumber+1))
-               done < <(find /etc/ssh /usr/local/etc/ssh -maxdepth 1 -name "ssh_host_*.pub" 2>/dev/null | sort)
+               done
                echo "==========================================================================="
                sleep 300
             done
