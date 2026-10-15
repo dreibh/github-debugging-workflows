@@ -94,7 +94,7 @@ REPO_NAME=$(basename -s .git "$(git config --get remote.origin.url)")
 if [[ "${WORKFLOW_FILE}" == *"windows"* ]]; then
    RUNNER_OS="windows"
    SSH_USER="runneradmin"
-elif [[ "${WORKFLOW_FILE}" =~ (macos|debian|ubuntu|centos|fedora|alpine|linux) ]]; then
+elif [[ "${WORKFLOW_FILE}" =~ (macos|debian|ubuntu|fedora|opensuse|alpine|freebsd) ]]; then
    RUNNER_OS="${BASH_REMATCH[1]}"
    SSH_USER="runner"
 
