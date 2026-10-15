@@ -39,7 +39,7 @@ jobs:
     container:
       image: debian:trixie
       # Grant required network privileges and inject the TUN device for Tailscale
-      options: --cap-add=SYS_ADMIN --device /dev/net/tun
+      options: --cap-add=SYS_ADMIN --cap-add=NET_ADMIN --device /dev/net/tun
     steps:
 
       # ###### Prepare barebones Debian container ###########################
