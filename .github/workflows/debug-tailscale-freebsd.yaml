@@ -60,8 +60,8 @@ jobs:
             sysrc tailscaled_enable="YES"
             service tailscaled start
 
-            TS_HOSTNAME="${github.event.repository.name}-freebsd"
-            tailscale up --authkey="${secrets.TAILSCALE_AUTHKEY}" --hostname="${TS_HOSTNAME}"
+            TS_HOSTNAME="${REPO_NAME}-freebsd"
+            tailscale up --authkey="${TAILSCALE_AUTHKEY}" --hostname="${TS_HOSTNAME}"
 
             # 2. Create 'runner' user
             if ! pw user show runner >/dev/null 2>&1; then
@@ -70,9 +70,9 @@ jobs:
             fi
 
             # 3. Setup SSH keys for the GitHub user
-            echo "Fetching SSH public keys for GitHub user: ${{ github.actor }}..."
+            echo "Fetching SSH public keys for GitHub user: ${GITHUB_ACTOR}..."
             mkdir -p /usr/home/runner/.ssh
-            curl -sL "https://github.com/${{ github.actor }}.keys" >> /usr/home/runner/.ssh/authorized_keys
+            curl -sL "https://github.com/${GITHUB_ACTOR}.keys" >> /usr/home/runner/.ssh/authorized_keys
             chmod 700 /usr/home/runner/.ssh
             chmod 600 /usr/home/runner/.ssh/authorized_keys
             chown -R runner:wheel /usr/home/runner/.ssh
