@@ -57,12 +57,6 @@ jobs:
             TS_HOSTNAME="${REPO_NAME}-netbsd"
             tailscale up --authkey="${TAILSCALE_AUTHKEY}" --hostname="${TS_HOSTNAME}"
 
-            # 2. Create 'runner' user
-            if ! user show runner >/dev/null 2>&1; then
-               useradd -m -s /usr/pkg/bin/bash -g wheel runner
-               echo "runner ALL=(ALL) NOPASSWD:ALL" >> /usr/pkg/etc/sudoers
-            fi
-
             # 3. Setup SSH keys for the GitHub user
             echo "Fetching SSH public keys for GitHub user: ${GITHUB_ACTOR}..."
             mkdir -p /home/runner/.ssh
