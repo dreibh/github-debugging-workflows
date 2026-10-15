@@ -45,13 +45,17 @@ jobs:
           run: |
             set -eu
 
-            # 1. Start Tailscale daemon and connect inside NetBSD
+            # 1. Copy rc.d script, enable and start tailscaled
+            if [ -f /usr/pkg/share/examples/rc.d/tailscaled ]; then
+               cp /usr/pkg/share/examples/rc.d/tailscaled /etc/rc.d/tailscaled
+               chmod 755 /etc/rc.d/tailscaled
+            fi
             echo 'tailscaled=YES' >> /etc/rc.conf
             service tailscaled start || /usr/pkg/sbin/tailscaled &
             sleep 3
 
             TS_HOSTNAME="${REPO_NAME}-netbsd"
-            tailscale up --authkey="${TAILSCALE_AUTHKEY}" --hostname="${TS_HOSTNAME}" --tun=userspace-networking
+            tailscale up --authkey="${TAILSCALE_AUTHKEY}" --hostname="${TS_HOSTNAME}"
 
             # 2. Create 'runner' user
             if ! user show runner >/dev/null 2>&1; then
