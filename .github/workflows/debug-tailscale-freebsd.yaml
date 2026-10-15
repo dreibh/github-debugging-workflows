@@ -100,28 +100,29 @@ jobs:
             sudo -u runner git clone https://dreibh@github.com/simula/nornet-vmimage-builder-scripts.git vmimage-builder-scripts
 
             # 5. Pre-install FreeBSD packages
-            pkg install -y libidn2 libmaxminddb
+            sudo pkg install -y bash cmake gettext gcc git gmake joe pwgen sudo wget
 
-            pkg install -y ghostscript10 GraphicsMagick pdf2svg
 
-            pkg install -y bison flex curl openssl
+            sudo pkg install -y libidn2 libmaxminddb
 
-            pkg install -y boost-libs zstd
+            sudo pkg install -y ghostscript10 GraphicsMagick pdf2svg
 
-            pkg install -y qt6-base qt6-tools
+            sudo pkg install -y bison flex curl openssl
 
-            pkg install -y gimp3-app p5-Image-ExifTool
-            pkg install -y noto
+            sudo pkg install -y install boost zstd
 
-            pkg install -y gnutls nss
+            sudo pkg install -y qt6-base qt6-tools
 
-            pkg install -y autoconf automake glib libtool pkgconf
+            sudo pkg install -y gimp3-app p5-Image-ExifTool
+            sudo pkg install -y noto
 
-            pkg install -y pulseaudio
+            sudo pkg install -y gnutls nss
 
-            pkg install -y openssl jansson ldns libuv
+            sudo pkg install -y autoconf automake glib libtool pkgconf
 
-            pkg install -y python314
+            sudo pkg install -y pulseaudio
+
+            sudo pkg install -y openssl jansson ldns libuv
 
             sudo -u runner bash -c '
               python3.14 -m venv /home/runner/venv
