@@ -4,10 +4,12 @@
 
 This repository contains GitHub Workflows for debugging GitHub Workflow instances interactively using SSH access via a [Tailscale](https://tailscale.com/) VPN:
 
-* MacOS Debugging Workflow:
-  [`.github/workflows/debug-tailscale-macos.yaml`](.github/workflows/debug-tailscale-macos.yaml)
 * Ubuntu Debugging Workflow:
   [`.github/workflows/debug-tailscale-ubuntu.yaml`](.github/workflows/debug-tailscale-ubuntu.yaml)
+* Debian Debugging Workflow:
+  [`.github/workflows/debug-tailscale-debian.yaml`](.github/workflows/debug-tailscale-debian.yaml)
+* MacOS Debugging Workflow:
+  [`.github/workflows/debug-tailscale-macos.yaml`](.github/workflows/debug-tailscale-macos.yaml)
 * Windows Debugging Workflow:
   [`.github/workflows/debug-tailscale-windows.yaml`](.github/workflows/debug-tailscale-windows.yaml)
 
@@ -36,34 +38,34 @@ Each debugging workflow performs the following steps:
 
 1. Set up a [Tailscale](https://tailscale.com/) VPN, e.g., in an Ubuntu VM or container:
 
-  ```bash
-  curl -fsSL https://tailscale.com/install.sh | sh
-  sudo tailscale up
+   ```bash
+   curl -fsSL https://tailscale.com/install.sh | sh
+   sudo tailscale up
   ```
 
-  It is strongly recommended to install [System-Tools](https://www.nntb.no/~dreibh/system-tools/) as well:
+   It is strongly recommended to install [System-Tools](https://www.nntb.no/~dreibh/system-tools/) as well:
 
-  ```bash
-  sudo apt-add-repository -y ppa:dreibh/ppa
-  sudo apt install -y td-system-tools-basic
-  ```
+   ```bash
+   sudo apt-add-repository -y ppa:dreibh/ppa
+   sudo apt install -y td-system-tools-basic
+   ```
 
-  Run `System-Info` and check the network interfaces. It must show a Tailscale interface `tailscale0` with Tailscale IP addresses.
+   Run `System-Info` and check the network interfaces. It must show a Tailscale interface `tailscale0` with Tailscale IP addresses.
 
-2. Generate an _ephemeral_ authentication key:
+2. Generate an **ephemeral** authentication key:
 
-  * In [Tailscale](https://console.tailscale.com/), under
-    [Tailscale Admin Console](https://console.tailscale.com/admin) /
-    [Settings](https://console.tailscale.com/admin/settings/) /
-    [Keys](https://console.tailscale.com/admin/settings/keys),
-    click on "Generate auth key":
+   * In [Tailscale](https://console.tailscale.com/), under
+     [Tailscale Admin Console](https://console.tailscale.com/admin) /
+     [Settings](https://console.tailscale.com/admin/settings/) /
+     [Keys](https://console.tailscale.com/admin/settings/keys),
+     click on "Generate auth key":
 
-    - Reusable: **ON**
-    - Emphemeral: **ON**
+     - Reusable: **ON**
+     - Ephemeral: **ON**
 
-    Copy the authentication token before saving.
+     Copy the authentication token before saving.
 
-  * The taken needs renewal after its expiration date!
+   * This token needs renewal after its expiration date!
 
 3. Set the authentication key in GitHub:
 
@@ -76,15 +78,17 @@ Each debugging workflow performs the following steps:
     - Name: `TAILSCALE_AUTHKEY` (the name **MUST** match)
     - Value: *(Your Tailscale token)*
 
-  The taken needs renewal after expiration!
+   This setting needs an update after the token expiration date!
 
 
 ## Add the debugging workflows to your repository
 
-Copy the workflow YAML files from [`.github/workflows`](.github/workflows/) of this repository to the corresponding directory of your repository:
+Copy the workflow YAML files from [`.github/workflows`](.github/workflows/) of _this_ repository to the corresponding directory of _your_ repository:
 
 * Ubuntu Debugging Workflow:
   [`.github/workflows/debug-tailscale-ubuntu.yaml`](.github/workflows/debug-tailscale-ubuntu.yaml)
+* Debian Debugging Workflow:
+  [`.github/workflows/debug-tailscale-debian.yaml`](.github/workflows/debug-tailscale-debian.yaml)
 * MacOS Debugging Workflow:
   [`.github/workflows/debug-tailscale-macos.yaml`](.github/workflows/debug-tailscale-macos.yaml)
 * Windows Debugging Workflow:
@@ -92,19 +96,20 @@ Copy the workflow YAML files from [`.github/workflows`](.github/workflows/) of t
 
 Add the files, commit, and push.
 
-## Manually start an instance on GitHub
+## Manually Start a Debug Instance on GitHub
 
-1. Log into [GitHub](https://www.github.com) and go to your repository.
+1. Log into [GitHub](https://www.github.com) and go to _your_ repository.
 
 2. Clicking on _Actions_ shows the debugging workflows, i.e.:
 
-   * MacOS Debugging Workflow via Tailscale
    * Ubuntu Debugging Workflow via Tailscale
+   * Debian Debugging Workflow via Tailscale
+   * MacOS Debugging Workflow via Tailscale
    * Windows Debugging Workflow via Tailscale
 
    Select a workflow, e.g., "MacOS Debugging Workflow via Tailscale", and start this workflow under "Run workflow".
 
-3. Open the log of the running instance and look for the Tailscale SSH details of the instance:
+3. Open the log of the running instance and look for the Tailscale SSH details:
 
    ```
    ====== 2026-10-09 07:50:35 +0000 ==========================================
@@ -119,13 +124,64 @@ Add the files, commit, and push.
    ===========================================================================
    ```
 
-4. Call the displayed SSH command from the client machine, e.g.:
+4. Call the displayed SSH command from the client machine, e.g.,
 
    ```bash
    ssh runner@100.100.210.26
    ```
 
    Authenticate using your GitHub SSH key.
+
+## Automatically Start a Debug Instance on GitHub
+
+[`connect-to-runner`](connect-to-runner) automatically starts an instance using the [GitHub CLI](https://cli.github.com/), queries tailscale about the status and IP address, displays the login information, and finally sets up an SSH session into the instance.
+
+1. Install the [GitHub CLI](https://cli.github.com/), e.g., under Ubuntu:
+
+   ```bash
+   sudo apt install -y gh
+   ```
+
+   Configure authentication:
+
+   ```bash
+   gh auth login
+   ```
+
+2. Run [`connect-to-runner`](connect-to-runner) from within **your** repository:
+
+   * If Tailscale is running on the same machine:
+
+     ```bash
+     ./connect-to-runner WORKFLOW_YAML_FILE
+     ```
+
+     The workflow `WORKFLOW_YAML_FILE` must exist under [`.github/workflows`](.github/workflows), e.g.
+     [`debug-tailscale-ubuntu.yaml`](.github/workflows/debug-tailscale-ubuntu.yaml),
+     [`debug-tailscale-debian.yaml`](.github/workflows/debug-tailscale-debian.yaml),
+     [`debug-tailscale-macos.yaml`](.github/workflows/debug-tailscale-macos.yaml), or
+     [`debug-tailscale-windows.yaml`](.github/workflows/debug-tailscale-windows.yaml) in **this** repository.
+
+     Example:
+
+     ```bash
+     ./connect-to-runner debug-tailscale-ubuntu.yaml
+     ```
+
+
+  * If Tailscale is running on a different machine, specify an SSH proxy setting for the Tailscale machine as well:
+
+     ```bash
+     ./connect-to-runner -J USER@PROXY WORKFLOW.yaml
+     ```
+
+     `USER@PROXY` is the SSH login for the Tailscale machine.
+
+    Example:
+
+    ```bash
+    ./connect-to-runner -J nornetpp@10.44.43.33 debug-tailscale-ubuntu.yaml
+    ```
 
 
 # 🔗 Useful Links
