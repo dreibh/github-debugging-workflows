@@ -123,57 +123,101 @@ fi
 
 # ====== Print status based on connection mode ==============================
 if [ -n "${PROXY_SSH}" ]; then
-   echo "Waiting for ${TS_HOSTNAME} to become online via proxy (${PROXY_SSH}) ..."
+   echo "Waiting for ${TS_HOSTNAME} (or latest suffix) to become online via proxy (${PROXY_SSH}) ..."
 else
-   echo "Waiting for ${TS_HOSTNAME} to become online directly ..."
+   echo "Waiting for ${TS_HOSTNAME} (or latest suffix) to become online directly ..."
 fi
 
-# ====== Continuously ping the Tailscale hostname until it responds =========
+# ====== Tailscale query wrappers ===========================================
 
-# Wrappers for Tailscale commands to handle both proxy and direct modes gracefully
-run_tailscale_ping() {
+get_tailscale_status() {
    if [ -n "${PROXY_SSH}" ]; then
       # shellcheck disable=SC2029
-      ssh "${PROXY_SSH}" tailscale ping -c 1 --timeout 2s --until-direct=false "${TS_HOSTNAME}" >/dev/null 2>&1
+      ssh "${PROXY_SSH}" tailscale status 2>/dev/null || true
    else
-      tailscale ping -c 1 --timeout 2s --until-direct=false "${TS_HOSTNAME}" >/dev/null 2>&1
+      tailscale status 2>/dev/null || true
+   fi
+}
+
+get_latest_tailscale_hostname() {
+   get_tailscale_status | awk -v base="${TS_HOSTNAME}" -v max_act=-1 -v max_any=-1 '
+      function check(name, b) {
+         if (name == b) return 0;
+         p = b "-";
+         if (index(name, p) == 1) {
+            r = substr(name, length(p) + 1);
+            if (r ~ /^[0-9]+$/) return int(r);
+         }
+         return -1;
+      }
+      {
+         n = check($2, base);
+         # Prioritize non-offline nodes
+         if (n >= 0 && $0 !~ /offline/) {
+            if (n > max_act) { max_act = n; act = $2; }
+         }
+         # Fallback to any node with the highest suffix
+         if (n >= 0) {
+            if (n > max_any) { max_any = n; any = $2; }
+         }
+      }
+      END {
+         if (act != "") print act;
+         else if (any != "") print any;
+      }
+   '
+}
+
+run_tailscale_ping() {
+   local target="$1"
+   if [ -n "${PROXY_SSH}" ]; then
+      # shellcheck disable=SC2029
+      ssh "${PROXY_SSH}" tailscale ping -c 1 --timeout 2s --until-direct=false "${target}" >/dev/null 2>&1
+   else
+      tailscale ping -c 1 --timeout 2s --until-direct=false "${target}" >/dev/null 2>&1
    fi
 }
 
 get_tailscale_ip() {
    local ip_flag="$1"
+   local target="$2"
    if [ -n "${PROXY_SSH}" ]; then
       # shellcheck disable=SC2029
-      ssh "${PROXY_SSH}" tailscale ip "${ip_flag}" "${TS_HOSTNAME}"
+      ssh "${PROXY_SSH}" tailscale ip "${ip_flag}" "${target}" 2>/dev/null || true
    else
-      tailscale ip "${ip_flag}" "${TS_HOSTNAME}"
+      tailscale ip "${ip_flag}" "${target}" 2>/dev/null || true
    fi
 }
 
+# ====== Continuously poll and ping until the active runner responds ========
 while true ; do
-   if run_tailscale_ping ; then
-      IPV4="$(get_tailscale_ip -4)"
-      IPV6="$(get_tailscale_ip -6)"
+   CURRENT_TS_HOSTNAME="$(get_latest_tailscale_hostname)"
+   TARGET_HOST="${CURRENT_TS_HOSTNAME:-${TS_HOSTNAME}}"
 
-      echo -e "\n✅ Runner is online!"
+   if [ -n "${TARGET_HOST}" ] && run_tailscale_ping "${TARGET_HOST}" ; then
+      IPV4="$(get_tailscale_ip -4 "${TARGET_HOST}")"
+      IPV6="$(get_tailscale_ip -6 "${TARGET_HOST}")"
+
+      echo -e "\n✅ Runner is online (${TARGET_HOST})!"
       echo -e "\x1b[34m====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================\x1b[0m"
       echo "Tailscale IPs: ${IPV4} ${IPV6}"
       echo "Connect via SSH using:"
 
       if [ -n "${PROXY_SSH}" ]; then
-         echo " * ssh -J ${PROXY_SSH} ${SSH_USER}@${IPV4}"
-         echo " * ssh -J ${PROXY_SSH} ${SSH_USER}@${IPV6}"
+         [ -n "${IPV4}" ] && echo " * ssh -J ${PROXY_SSH} ${SSH_USER}@${IPV4}"
+         [ -n "${IPV6}" ] && echo " * ssh -J ${PROXY_SSH} ${SSH_USER}@${IPV6}"
       else
-         echo " * ssh ${SSH_USER}@${IPV4}"
-         echo " * ssh ${SSH_USER}@${IPV6}"
+         [ -n "${IPV4}" ] && echo " * ssh ${SSH_USER}@${IPV4}"
+         [ -n "${IPV6}" ] && echo " * ssh ${SSH_USER}@${IPV6}"
       fi
       echo -e "\x1b[34m===========================================================================\x1b[0m\n"
 
       echo "Connecting ..."
+      TARGET_IP="${IPV4:-${IPV6}}"
       if [ -n "${PROXY_SSH}" ]; then
-        ssh -J "${PROXY_SSH}" "${SSH_USER}@${IPV4}"
+         ssh -J "${PROXY_SSH}" "${SSH_USER}@${TARGET_IP}"
       else
-         ssh "${SSH_USER}@${IPV4}"
+         ssh "${SSH_USER}@${TARGET_IP}"
       fi
       break
    fi
