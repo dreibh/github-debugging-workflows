@@ -51,7 +51,7 @@ jobs:
           envs: "TAILSCALE_AUTHKEY GITHUB_ACTOR REPO_NAME"
           prepare: |
             export PATH="/usr/local/bin:/usr/local/sbin:/sbin:/usr/sbin:/bin:/usr/bin:$PATH"
-            pkg_add -I bash curl git sudo tailscale
+            pkg_add -I bash curl git sudo-- tailscale
 
           run: |
             set -eu
