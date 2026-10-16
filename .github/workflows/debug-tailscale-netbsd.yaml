@@ -121,10 +121,30 @@ jobs:
             sudo -u runner git clone https://dreibh@github.com/dreibh/tsctp
             sudo -u runner git clone https://dreibh@github.com/simula/nornet-vmimage-builder-scripts.git vmimage-builder-scripts
 
-            # 6. Pre-install NetBSD packages via pkgin
+            # 6. Install System-Tools & Environment Settings:
             pkgin -y install bash cmake gettext gcc15 git gmake joe sudo wget
+            cd /home/runner/src/system-tools
+            sudo -u runner ./autogen.sh
+            make install
 
+            mkdir -p /usr/pkg/etc/system-info.d/
+            cp /home/runner/src/vmimage-builder-scripts/files/11-system-info.files/01-hostname \
+               /home/runner/src/vmimage-builder-scripts/files/80-simulamet.files/02-simulamet \
+               /usr/pkg/etc/system-info.d/ || true
 
+            sudo -u runner bash -c "cat >>/home/runner/.bash_profile <<'INNER_EOF'
+            [ -f \$HOME/.bashrc ] && source \$HOME/.bashrc
+            INNER_EOF"
+
+            sudo -u runner bash -c "cat >>/home/runner/.bashrc <<'INNER_EOF'
+            [[ -r \"/usr/pkg/share/bash-completion/bash_completion\" ]] && . \"/usr/pkg/share/bash-completion/bash_completion\"
+            INNER_EOF"
+            sudo -u runner bash -c "cat /home/runner/src/vmimage-builder-scripts/files/05-user-settings.files/bashrc >>/home/runner/.bashrc"
+
+            # 7. Set a useful hostname:
+            Reset-Machine-ID --yes-to-all-i-am-really-sure -MSK -H "netbsd.github.test" || true
+
+            # 8. Pre-install NetBSD packages via pkgin:
             pkgin -y install libidn2 libiberty libmaxminddb
 
             # pkgin -y install ghostscript GraphicsMagick pdf2svg
@@ -154,29 +174,7 @@ jobs:
               pip install distro psutil
             '
 
-            # 7. Install System-Tools & Environment Settings
-            cd /home/runner/src/system-tools
-            # !!! sudo -u runner ./autogen.sh
-            # !!! make install
-
-            mkdir -p /usr/pkg/etc/system-info.d/
-            cp /home/runner/src/vmimage-builder-scripts/files/11-system-info.files/01-hostname \
-               /home/runner/src/vmimage-builder-scripts/files/80-simulamet.files/02-simulamet \
-               /usr/pkg/etc/system-info.d/ || true
-
-            sudo -u runner bash -c "cat >>/home/runner/.bash_profile <<'INNER_EOF'
-            [ -f \$HOME/.bashrc ] && source \$HOME/.bashrc
-            INNER_EOF"
-
-            sudo -u runner bash -c "cat >>/home/runner/.bashrc <<'INNER_EOF'
-            [[ -r \"/usr/pkg/share/bash-completion/bash_completion\" ]] && . \"/usr/pkg/share/bash-completion/bash_completion\"
-            INNER_EOF"
-            sudo -u runner bash -c "cat /home/runner/src/vmimage-builder-scripts/files/05-user-settings.files/bashrc >>/home/runner/.bashrc"
-
-            # Set hostname
-            hostname "netbsd.github.test"
-
-            # 8. Pause and keep alive for interactive SSH debugging
+            # 9. Pause and keep alive for interactive SSH debugging
             while true ; do
                echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
                echo "Tailscale IPs: $(tailscale ip | xargs)"
