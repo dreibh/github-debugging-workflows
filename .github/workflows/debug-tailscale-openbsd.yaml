@@ -121,7 +121,7 @@ jobs:
             sudo -u runner git clone https://dreibh@github.com/simula/nornet-vmimage-builder-scripts.git vmimage-builder-scripts
 
             # 6. Install System-Tools & Environment Settings:
-            pkg_add -I cmake figlet gettext git gnugetopt gmake joe pwgen sudo wget
+            pkg_add -I cmake figlet gettext-runtime gettext-tools git gnugetopt gmake joe pwgen sudo wget
             cd /home/runner/src/system-tools
             sudo -u runner ./autogen.sh
             make install
