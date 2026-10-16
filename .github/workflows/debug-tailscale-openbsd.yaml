@@ -65,11 +65,11 @@ jobs:
             TS_HOSTNAME="${REPO_NAME}-openbsd"
             tailscale up --authkey="${TAILSCALE_AUTHKEY}" --hostname="${TS_HOSTNAME}"
 
-            # 2. Create 'runner' user:
-            if ! id runner >/dev/null 2>&1; then
-               useradd -m -s /usr/local/bin/bash -G wheel runner
-               echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-            fi
+            # # 2. Create 'runner' user:
+            # if ! id runner >/dev/null 2>&1; then
+            #    useradd -m -s /usr/local/bin/bash -G wheel runner
+            #    echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+            # fi
 
             # 3. Setup SSH keys for the GitHub user:
             echo "Fetching SSH public keys for GitHub user: ${GITHUB_ACTOR}..."
