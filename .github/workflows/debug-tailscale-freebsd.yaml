@@ -160,7 +160,7 @@ jobs:
               pip install distro psutil
             '
 
-            # 9. Pause and keep alive for interactive SSH debugging
+            # 9. Pause and keep alive for interactive SSH debugging:
             while true ; do
                echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
                echo "Tailscale IPs: $(tailscale ip | xargs)"
