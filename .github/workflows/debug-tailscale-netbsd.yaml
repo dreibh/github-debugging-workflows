@@ -27,7 +27,7 @@
 #
 # Contact: dreibh@simula.no
 
-name: NetBSD 11.0 Debugging Workflow via Tailscale
+name: NetBSD Debugging Workflow via Tailscale
 on: [ workflow_dispatch ]   # Workflow is triggered manually
 
 jobs:

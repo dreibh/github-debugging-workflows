@@ -27,7 +27,7 @@
 #
 # Contact: dreibh@simula.no
 
-name: FreeBSD 15.1 Debugging Workflow via Tailscale
+name: FreeBSD Debugging Workflow via Tailscale
 on: [ workflow_dispatch ]   # Workflow is triggered manually
 
 jobs:
