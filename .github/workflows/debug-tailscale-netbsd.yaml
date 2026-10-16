@@ -122,29 +122,29 @@ jobs:
             sudo -u runner git clone https://dreibh@github.com/simula/nornet-vmimage-builder-scripts.git vmimage-builder-scripts
 
             # 6. Pre-install NetBSD packages via pkgin
-            # pkgin -y install bash cmake gettext gcc15 git gmake joe sudo wget
+            pkgin -y install bash cmake gettext gcc15 git gmake joe sudo wget
 
 
-            # pkgin -y install libidn2 libiberty libmaxminddb
+            pkgin -y install libidn2 libiberty libmaxminddb
 
             # pkgin -y install ghostscript GraphicsMagick pdf2svg
-            #
-            # pkgin -y install bison flex curl openssl
-            #
-            # pkgin -y install libinotify boost
-            # pkgin -y install mariadb-client libpqxx mongo-c-driver
-            #
+
+            pkgin -y install bison flex curl openssl
+
+            pkgin -y install libinotify boost
+            pkgin -y install mariadb-client libpqxx mongo-c-driver
+
             # pkgin -y install qt6
-            #
+
             # pkgin -y install gimp p5-Image-ExifTool
-            #
-            # pkgin -y install gnutls nss
-            #
-            # pkgin -y install autoconf automake glib2 libtool pkgconf
-            #
+
+            pkgin -y install gnutls nss
+
+            pkgin -y install autoconf automake glib2 libtool pkgconf
+
             # pkgin -y install pulseaudio
-            #
-            # pkgin -y install openssl jansson ldns libuv
+
+            pkgin -y install openssl jansson ldns libuv
 
             pkgin -y install python314
 
