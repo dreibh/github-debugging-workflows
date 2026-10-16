@@ -82,13 +82,31 @@ if [ "$#" -ne 1 ]; then
    exit 1
 fi
 WORKFLOW_FILE="$1"
-if [ ! -f "${WORKFLOW_FILE}" ] && [ ! -f ".github/workflows/${WORKFLOW_FILE}" ]; then
-   echo "ERROR: Workflow file '${WORKFLOW_FILE}' does not exist locally or in .github/workflows/."
-   exit 1
-fi
 
 # ====== Extract the repository name from the local git remote ==============
-REPO_NAME=$(basename -s .git "$(git config --get remote.origin.url)")
+if ! REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+   echo >&2 "ERROR: Not inside a Git repository."
+   exit 1
+fi
+WORKFLOW_DIR="${REPO_ROOT}/.github/workflows"
+REPO_NAME="$(basename -s .git "$(git config --get remote.origin.url 2>/dev/null || echo "${REPO_ROOT}")")"
+
+if [ ! -f "${WORKFLOW_DIR}/${WORKFLOW_FILE}" ]; then
+   echo "ERROR: Workflow file '${WORKFLOW_FILE}' does not exist in ${WORKFLOW_DIR}/!" >&2
+   shopt -s nullglob
+   workflowFiles=("${WORKFLOW_DIR}"/*.{yml,yaml})
+   shopt -u nullglob
+
+   if [[ ${#workflowFiles[@]} -eq 0 ]]; then
+      echo "No workflow files found in ${WORKFLOW_DIR}." >&2
+   else
+      echo "Workflows in this repository:" >&2
+      for workflowFile in "${workflowFiles[@]}" ; do
+         echo " * ${workflowFile##*/}" >&2
+      done
+   fi
+   exit 1
+fi
 
 # ====== Determine the OS string and the correct SSH user ===================
 if [[ "${WORKFLOW_FILE}" == *"windows"* ]]; then
