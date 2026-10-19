@@ -146,26 +146,26 @@ jobs:
             # 8. Pre-install OpenBSD packages via pkg_add:
             pkg_add libidn2 libmaxminddb
 
-            pkg_add ghostscript-- GraphicsMagick inkscape
-
-            pkg_add bison curl "$(pkg_info -z "openssl->=4")"
-
-            pkg_add libinotify boost libinotify
-            pkg_add mariadb-client libpqxx
-
-            pkg_add qt6-qtbase qt6-qttools
-
-            pkg_add "$(pkg_info -z "gimp->=3")"
-            pkg_add p5-Image-ExifTool
-            pkg_add noto-fonts noto-cjk noto-emoji noto-nerd-fonts
+            # pkg_add ghostscript-- GraphicsMagick inkscape
+            #
+            # pkg_add bison curl "$(pkg_info -z "openssl->=4")"
+            #
+            # pkg_add libinotify boost libinotify
+            # pkg_add mariadb-client libpqxx
+            #
+            # pkg_add qt6-qtbase qt6-qttools
+            #
+            # pkg_add "$(pkg_info -z "gimp->=3")"
+            # pkg_add p5-Image-ExifTool
+            # pkg_add noto-fonts noto-cjk noto-emoji noto-nerd-fonts
 
             pkg_add gnutls nss
 
-            pkg_add "$(pkg_info -z "autoconf->=2.72")" "$(pkg_info -z "automake->=1.18")" glib2 libtool
-
-            pkg_add pulseaudio
-
-            pkg_add jansson libldns libuv
+            # pkg_add "$(pkg_info -z "autoconf->=2.72")" "$(pkg_info -z "automake->=1.18")" glib2 libtool
+            #
+            # pkg_add pulseaudio
+            #
+            # pkg_add jansson libldns libuv
 
             pkg_add python--%3
             sudo -u runner python3 -m venv /home/runner/venv
