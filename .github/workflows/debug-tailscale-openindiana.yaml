@@ -79,11 +79,17 @@ jobs:
 
             # 2. Setup SSH keys for the GitHub user:
             echo "Fetching SSH public keys for GitHub user: ${GITHUB_ACTOR}..."
-            mkdir -p /home/runner/.ssh
-            curl -sL "https://github.com/${GITHUB_ACTOR}.keys" >> /home/runner/.ssh/authorized_keys
-            chmod 700 /home/runner/.ssh
-            chmod 600 /home/runner/.ssh/authorized_keys
-            chown -R runner:staff /home/runner
+            HOME_DIR="/export/home/runner"
+            [ ! -d "${HOME_DIR}" ] && HOME_DIR="/home/runner"
+
+            mkdir -p "${HOME_DIR}/.ssh"
+            curl -sL "https://github.com/${GITHUB_ACTOR}.keys" > "${HOME_DIR}/.ssh/authorized_keys"
+            chmod 700 "${HOME_DIR}/.ssh"
+            chmod 600 "${HOME_DIR}/.ssh/authorized_keys"
+            chown -R runner:staff "${HOME_DIR}"
+
+            # Ensure OpenIndiana sshd allows PubkeyAuthentication cleanly
+            svcadm restart svc:/network/ssh:default || true
 
             # 3. Enable and restart SSH service (illumos SMF):
             svcadm restart svc:/network/ssh:default || true

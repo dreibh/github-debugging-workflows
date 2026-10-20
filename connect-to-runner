@@ -112,7 +112,7 @@ fi
 if [[ "${WORKFLOW_FILE}" == *"windows"* ]]; then
    RUNNER_OS="windows"
    SSH_USER="runneradmin"
-elif [[ "${WORKFLOW_FILE}" =~ (macos|debian|ubuntu|fedora|opensuse|alpine|freebsd|netbsd|openbsd) ]]; then
+elif [[ "${WORKFLOW_FILE}" =~ (macos|debian|ubuntu|fedora|opensuse|alpine|freebsd|netbsd|openbsd|openindiana|hurd) ]]; then
    RUNNER_OS="${BASH_REMATCH[1]}"
    SSH_USER="runner"
 
