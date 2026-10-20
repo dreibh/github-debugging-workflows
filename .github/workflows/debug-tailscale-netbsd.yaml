@@ -11,8 +11,23 @@
 #
 # GitHub Debugging Workflows via Tailscale
 # Copyright (C) 2026 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@simula.no
 
-name: NetBSD 11.0 Debugging Workflow via Tailscale
+name: NetBSD Debugging Workflow via Tailscale
 on: [ workflow_dispatch ]   # Workflow is triggered manually
 
 jobs:
@@ -121,43 +136,11 @@ jobs:
             sudo -u runner git clone https://dreibh@github.com/dreibh/tsctp
             sudo -u runner git clone https://dreibh@github.com/simula/nornet-vmimage-builder-scripts.git vmimage-builder-scripts
 
-            # 6. Pre-install NetBSD packages via pkgin
-            # pkgin -y install bash cmake gettext gcc15 git gmake joe sudo wget
-
-
-            # pkgin -y install libidn2 libiberty libmaxminddb
-
-            # pkgin -y install ghostscript GraphicsMagick pdf2svg
-            #
-            # pkgin -y install bison flex curl openssl
-            #
-            # pkgin -y install libinotify boost
-            # pkgin -y install mariadb-client libpqxx mongo-c-driver
-            #
-            # pkgin -y install qt6
-            #
-            # pkgin -y install gimp p5-Image-ExifTool
-            #
-            # pkgin -y install gnutls nss
-            #
-            # pkgin -y install autoconf automake glib2 libtool pkgconf
-            #
-            # pkgin -y install pulseaudio
-            #
-            # pkgin -y install openssl jansson ldns libuv
-
-            pkgin -y install python314
-
-            sudo -u runner bash -c '
-              python3.14 -m venv /home/runner/venv
-              . /home/runner/venv/bin/activate
-              pip install distro psutil
-            '
-
-            # 7. Install System-Tools & Environment Settings
+            # 6. Install System-Tools & Environment Settings:
+            pkgin -y install bash cmake figlet gcc15 getopt gettext git gmake joe sudo wget
             cd /home/runner/src/system-tools
-            # !!! sudo -u runner ./autogen.sh
-            # !!! make install
+            sudo -u runner ./autogen.sh
+            make install
 
             mkdir -p /usr/pkg/etc/system-info.d/
             cp /home/runner/src/vmimage-builder-scripts/files/11-system-info.files/01-hostname \
@@ -173,10 +156,53 @@ jobs:
             INNER_EOF"
             sudo -u runner bash -c "cat /home/runner/src/vmimage-builder-scripts/files/05-user-settings.files/bashrc >>/home/runner/.bashrc"
 
-            # Set hostname
-            hostname "netbsd.github.test"
+            cat >>/etc/profile <<'EOF'
+            export LANG="C.UTF-8"
+            export LC_CTYPE="C.UTF-8"
+            for dir in /etc/profile.d /usr/local/etc/profile.d /usr/pkg/etc/profile.d ; do
+                if [ -d "$dir" ]; then
+                    for script in "$dir"/*.sh; do
+                        # The [ -r ... ] check ensures non-matching wildcards are not sourced:
+                        [ -r "$script" ] && . "$script"
+                    done
+                fi
+            done
+            EOF
 
-            # 8. Pause and keep alive for interactive SSH debugging
+            # 7. Set a useful hostname:
+            Reset-Machine-ID --yes-to-all-i-am-really-sure -MSK -H "netbsd.github.test" || true
+
+            # 8. Pre-install NetBSD packages via pkgin:
+            pkgin -y install libidn2 libiberty libmaxminddb
+
+            # pkgin -y install ghostscript GraphicsMagick pdf2svg
+
+            pkgin -y install bison flex curl openssl
+
+            pkgin -y install libinotify boost
+            pkgin -y install mariadb-client libpqxx mongo-c-driver
+
+            # pkgin -y install qt6
+
+            # pkgin -y install gimp p5-Image-ExifTool
+
+            pkgin -y install gnutls nss
+
+            pkgin -y install autoconf automake glib2 libtool pkgconf
+
+            # pkgin -y install pulseaudio
+
+            pkgin -y install openssl jansson ldns libuv
+
+            pkgin -y install python314
+
+            sudo -u runner bash -c '
+              python3.14 -m venv /home/runner/venv
+              . /home/runner/venv/bin/activate
+              pip install distro psutil
+            '
+
+            # 9. Pause and keep alive for interactive SSH debugging:
             while true ; do
                echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
                echo "Tailscale IPs: $(tailscale ip | xargs)"

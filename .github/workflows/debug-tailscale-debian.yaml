@@ -27,12 +27,12 @@
 #
 # Contact: dreibh@simula.no
 
-name: Debian Trixie Debugging Workflow via Tailscale
+name: Debian Debugging Workflow via Tailscale
 on: [ workflow_dispatch ]   # Workflow is triggered manually
 
 jobs:
   # #########################################################################
-  # #### Debian Trixie Debugging Workflow via Tailscale                  ####
+  # #### Debian Debugging Workflow via Tailscale                         ####
   # #########################################################################
   tailscale-debug-debian-trixie:
     runs-on: ubuntu-latest
