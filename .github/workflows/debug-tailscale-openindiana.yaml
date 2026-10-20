@@ -53,8 +53,8 @@ jobs:
           sudo apt-get update && sudo apt-get install -y socat
 
           # Stop and disable systemd socket activation for SSH on Ubuntu 24.04
-          sudo systemctl stop ssh.socket ssh.service 2>/dev/null || true
-          sudo systemctl disable ssh.socket ssh.service 2>/dev/null || true
+          sudo systemctl stop ssh.socket ssh.service || true
+          sudo systemctl disable ssh.socket ssh.service || true
 
           # Wait up to 10 seconds for port 22 to be freed
           for i in $(seq 1 10); do
@@ -160,8 +160,8 @@ jobs:
                web/wget
 
             cd /home/runner/src/system-tools
-            sudo -u runner ./autogen.sh
-            gmake install
+            # sudo -u runner ./autogen.sh
+            # gmake install
 
             mkdir -p /etc/system-info.d/
             cp /home/runner/src/vmimage-builder-scripts/files/11-system-info.files/01-hostname \
