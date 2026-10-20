@@ -39,40 +39,55 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # ###### Connect Host Runner to Tailscale #############################
+      - name: Connect Host Runner to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          hostname: ${{ github.event.repository.name }}-openindiana
+
+      # ###### Bridge Tailscale Port 22 to OpenIndiana VM (Port 10022) ######
+      - name: Setup Host SSH Relay to Guest VM
+        shell: bash
+        run: |
+          sudo apt-get update && sudo apt-get install -y socat
+          # Stop default host SSH service to free port 22
+          sudo systemctl stop ssh.service ssh.socket 2>/dev/null || true
+
+          # Relay host port 22 directly to OpenIndiana QEMU SSH port (127.0.0.1:10022)
+          sudo socat TCP4-LISTEN:22,fork,reuseaddr TCP4:127.0.0.1:10022 &
+          sudo socat TCP6-LISTEN:22,fork,reuseaddr TCP4:127.0.0.1:10022 & 2>/dev/null || true
+
+          # Pass Tailscale IPs into GitHub Environment for the VM step
+          TS_IP4=$(tailscale ip -4)
+          TS_IP6=$(tailscale ip -6 2>/dev/null || true)
+          echo "TAILSCALE_IP4=${TS_IP4}" >> "$GITHUB_ENV"
+          echo "TAILSCALE_IP6=${TS_IP6}" >> "$GITHUB_ENV"
+
       # ###### Start OpenIndiana VM and Execute Debug Environment ###########
       - name: Start OpenIndiana VM and Execute Debug Environment
         uses: vmactions/openindiana-vm@v1
         env:
-          TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
           GITHUB_ACTOR: ${{ github.actor }}
           REPO_NAME: ${{ github.event.repository.name }}
+          TAILSCALE_IP4: ${{ env.TAILSCALE_IP4 }}
+          TAILSCALE_IP6: ${{ env.TAILSCALE_IP6 }}
         with:
-          envs: "TAILSCALE_AUTHKEY GITHUB_ACTOR REPO_NAME"
+          envs: "GITHUB_ACTOR REPO_NAME TAILSCALE_IP4 TAILSCALE_IP6"
+          nat: |
+            "2222": "22"
           prepare: |
             pkg refresh --full
             pkg install --accept \
                shell/bash \
                web/curl \
                developer/versioning/git \
-               security/sudo \
-               network/tailscale \
-               network/openssh
+               security/sudo
 
           run: |
             set -eu
 
-            # 1. Start Tailscale daemon and connect inside OpenIndiana:
-            if svcs -a | grep -q tailscale; then
-               svcadm enable -r svc:/network/tailscale:default || true
-            else
-               tailscaled &
-            fi
-            sleep 3
-
-            TS_HOSTNAME="${REPO_NAME}-openindiana"
-            tailscale up --authkey="${TAILSCALE_AUTHKEY}" --hostname="${TS_HOSTNAME}"
-
-            # 2. Create 'runner' user:
+            # 1. Create 'runner' user:
             if ! id runner >/dev/null 2>&1; then
                if [ -d /home/runner ]; then
                   useradd -d /home/runner -s /usr/bin/bash -g staff runner
@@ -82,7 +97,7 @@ jobs:
                echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
             fi
 
-            # 3. Setup SSH keys for the GitHub user:
+            # 2. Setup SSH keys for the GitHub user:
             echo "Fetching SSH public keys for GitHub user: ${GITHUB_ACTOR}..."
             mkdir -p /home/runner/.ssh
             curl -sL "https://github.com/${GITHUB_ACTOR}.keys" >> /home/runner/.ssh/authorized_keys
@@ -90,13 +105,16 @@ jobs:
             chmod 600 /home/runner/.ssh/authorized_keys
             chown -R runner:staff /home/runner
 
-            # 4. Enable and restart SSH service (illumos SMF):
-            svcadm restart svc:/network/ssh:default || svcadm restart ssh
+            # 3. Enable and restart SSH service (illumos SMF):
+            svcadm restart svc:/network/ssh:default || true
             echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
-            echo "Tailscale IPs: $(tailscale ip | xargs)"
+            echo "Tailscale IPs: ${TAILSCALE_IP4} ${TAILSCALE_IP6}"
             echo "Connect via SSH using:"
-            echo " * ssh runner@$(tailscale ip -4)"
-            echo " * ssh runner@$(tailscale ip -6)"
+            echo " * ssh runner@${TAILSCALE_IP4}"
+            if [ -n "${TAILSCALE_IP6}" ]; then
+               echo " * ssh runner@${TAILSCALE_IP6}"
+            fi
+            echo " * ssh -p 2222 runner@${TAILSCALE_IP4}"
             echo "SSH key fingerprints:"
             keyNumber=1
             for key in $(find /etc/ssh /usr/local/etc/ssh -maxdepth 1 -name "ssh_host_*.pub" 2>/dev/null | sort) ; do
@@ -106,7 +124,7 @@ jobs:
             done
             echo "==========================================================================="
 
-            # 5. Clone repositories
+            # 4. Clone repositories
             mkdir -p /home/runner/src
             chown -R runner:staff /home/runner/src
             cd /home/runner/src
@@ -126,7 +144,7 @@ jobs:
             sudo -u runner git clone https://dreibh@github.com/dreibh/tsctp
             sudo -u runner git clone https://dreibh@github.com/simula/nornet-vmimage-builder-scripts.git vmimage-builder-scripts
 
-            # 6. Install System-Tools & Environment Settings:
+            # 5. Install System-Tools & Environment Settings:
             pkg install --accept \
                developer/build/cmake \
                developer/build/gnu-make \
@@ -166,23 +184,19 @@ jobs:
             done
             EOF
 
-            # 7. Set a useful hostname:
+            # 6. Set a useful hostname:
             Reset-Machine-ID --yes-to-all-i-am-really-sure -MSK -H "openindiana.github.test" || true
 
-            # 8. Pre-install OpenIndiana packages via IPS:
-            pkg install --accept \
-               developer/parser/bison \
-               developer/lexer/flex \
-               library/security/openssl \
-               system/library/boost
-
-            # 9. Pause and keep alive for interactive SSH debugging:
+            # 7. Pause and keep alive for interactive SSH debugging:
             while true ; do
                echo "====== Access at $(date +"%Y-%m-%d %H:%M:%S %z") ================================"
-               echo "Tailscale IPs: $(tailscale ip | xargs)"
+               echo "Tailscale IPs: ${TAILSCALE_IP4} ${TAILSCALE_IP6}"
                echo "Connect via SSH using:"
-               echo " * ssh runner@$(tailscale ip -4)"
-               echo " * ssh runner@$(tailscale ip -6)"
+               echo " * ssh runner@${TAILSCALE_IP4}"
+               if [ -n "${TAILSCALE_IP6}" ]; then
+                  echo " * ssh runner@${TAILSCALE_IP6}"
+               fi
+               echo " * ssh -p 2222 runner@${TAILSCALE_IP4}"
                echo "SSH key fingerprints:"
                keyNumber=1
                for key in $(find /etc/ssh /usr/local/etc/ssh -maxdepth 1 -name "ssh_host_*.pub" 2>/dev/null | sort) ; do
