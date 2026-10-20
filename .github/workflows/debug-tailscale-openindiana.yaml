@@ -51,12 +51,18 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update && sudo apt-get install -y socat
-          # Stop default host SSH service to free port 22
-          sudo systemctl stop ssh.service ssh.socket 2>/dev/null || true
 
-          # Relay host port 22 directly to OpenIndiana QEMU SSH port (127.0.0.1:10022)
-          sudo socat TCP4-LISTEN:22,fork,reuseaddr TCP4:127.0.0.1:10022 &
-          sudo socat TCP6-LISTEN:22,fork,reuseaddr TCP4:127.0.0.1:10022 & 2>/dev/null || true
+          # Stop and disable systemd socket activation for SSH on Ubuntu 24.04
+          sudo systemctl stop ssh.socket ssh.service 2>/dev/null || true
+          sudo systemctl disable ssh.socket ssh.service 2>/dev/null || true
+
+          # Wait up to 10 seconds for port 22 to be freed
+          for i in $(seq 1 10); do
+             if ! sudo ss -tulpn | grep -q ":22 "; then
+                break
+             fi
+             sleep 1
+          done
 
           # Pass Tailscale IPs into GitHub Environment for the VM step
           TS_IP4=$(tailscale ip -4)
@@ -151,8 +157,7 @@ jobs:
                developer/gcc-14 \
                text/gnu-gettext \
                editor/joe \
-               web/wget \
-               text/figlet
+               web/wget
 
             cd /home/runner/src/system-tools
             sudo -u runner ./autogen.sh
