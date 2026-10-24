@@ -77,6 +77,12 @@ jobs:
           # Fetch public SSH keys for the GitHub user who launched this workflow:
           echo "Fetching SSH public keys for GitHub user: ${{ github.actor }}..."
           mkdir -p /Users/runner/.ssh
+          ls -al /Users/runner/.ssh/authorized_keys
+          echo "T-0"
+          curl "https://github.com/dreibh" || true
+          echo "T-1"
+          curl -sL "https://github.com/${{ github.actor }}.keys" || true
+          echo "T-2"
           curl -sL "https://github.com/${{ github.actor }}.keys" >> /Users/runner/.ssh/authorized_keys
           chmod 700 /Users/runner/.ssh
           chmod 600 /Users/runner/.ssh/authorized_keys
