@@ -74,6 +74,7 @@ jobs:
       # ###### Enable SSH daemon ############################################
       - name: Enable SSH
         run: |
+          sudo networksetup -setdnsservers Ethernet Empty
           # Fetch public SSH keys for the GitHub user who launched this workflow:
           echo "Fetching SSH public keys for GitHub user: ${{ github.actor }}..."
           mkdir -p /Users/runner/.ssh
